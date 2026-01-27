@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Hiking App">
+  <metadata>
+    <name>Jalur Wekas</name>
+    <desc>Hiking route through Gunung Gede</desc>
+    <time>2025-12-15T07:00:00Z</time>
+  </metadata>
+  
+  <!-- Track points for the hiking trail -->
+  <trk>
+    <name>Jalur Wekas Track</name>
+    <trkseg>
+      <trkpt lat="-6.8500" lon="107.1100"><ele>1500</ele></trkpt>
+      <trkpt lat="-6.8505" lon="107.1105"><ele>1560</ele></trkpt>
+      <trkpt lat="-6.8510" lon="107.1110"><ele>1630</ele></trkpt>
+      <trkpt lat="-6.8515" lon="107.1115"><ele>1700</ele></trkpt>
+      <trkpt lat="-6.8520" lon="107.1120"><ele>1770</ele></trkpt>
+      <trkpt lat="-6.8525" lon="107.1125"><ele>1840</ele></trkpt>
+      <trkpt lat="-6.8530" lon="107.1130"><ele>1910</ele></trkpt>
+      <trkpt lat="-6.8535" lon="107.1135"><ele>1980</ele></trkpt>
+      <trkpt lat="-6.8540" lon="107.1140"><ele>2050</ele></trkpt>
+      <trkpt lat="-6.8545" lon="107.1145"><ele>2120</ele></trkpt>
+      <trkpt lat="-6.8550" lon="107.1150"><ele>2190</ele></trkpt>
+      <trkpt lat="-6.8555" lon="107.1155"><ele>2260</ele></trkpt>
+      <trkpt lat="-6.8560" lon="107.1160"><ele>2330</ele></trkpt>
+      <trkpt lat="-6.8565" lon="107.1165"><ele>2400</ele></trkpt>
+      <trkpt lat="-6.8570" lon="107.1170"><ele>2470</ele></trkpt>
+      <trkpt lat="-6.8575" lon="107.1175"><ele>2540</ele></trkpt>
+      <trkpt lat="-6.8580" lon="107.1180"><ele>2610</ele></trkpt>
+      <trkpt lat="-6.8585" lon="107.1185"><ele>2680</ele></trkpt>
+      <trkpt lat="-6.8590" lon="107.1190"><ele>2750</ele></trkpt>
+      <trkpt lat="-6.8595" lon="107.1195"><ele>2820</ele></trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Waypoints for checkpoints and summit -->
+  <wpt lat="-6.8500" lon="107.1100">
+    <name>Pos 1 Cibodas</name>
+    <desc>Starting point</desc>
+  </wpt>
+  
+  <wpt lat="-6.8530" lon="107.1130">
+    <name>Pos 2 Cibodas</name>
+    <desc>Checkpoint 2</desc>
+  </wpt>
+  
+  <wpt lat="-6.8560" lon="107.1160">
+    <name>Pos 3 Kandang Batu</name>
+    <desc>Checkpoint 3</desc>
+  </wpt>
+
+  <wpt lat="-6.8595" lon="107.1195">
+    <name>Puncak Gunung Gede</name>
+    <desc>Summit</desc>
+  </wpt>
+</gpx>
