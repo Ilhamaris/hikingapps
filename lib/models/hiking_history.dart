@@ -1,5 +1,5 @@
-// Kelas untuk merepresentasikan riwayat pendakian yang telah dilakukan
-class HikingHistory {
+// Kelas riwayat pendakian 
+  class HikingHistory {
   final String id;
   final String mountainName;
   final String routeName;
@@ -24,11 +24,8 @@ class HikingHistory {
 
 // Kelas untuk merepresentasikan satu segmen atau bagian dari rute pendakian
 class RouteSegment {
-  // Nama lokasi atau waypoint awal segmen
   final String from;
-  // Nama lokasi atau waypoint akhir segmen
   final String to;
-  // Waktu tempuh yang diperkirakan untuk segmen ini
   final Duration estimatedTime;
 
   // Konstruktor untuk menginisialisasi properti segmen rute
