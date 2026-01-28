@@ -11,14 +11,14 @@ void main() {
   runApp(const MyApp());
 }
 
-/// Widget utama aplikasi
+// Widget utama aplikasi
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Prediksi Waktu Pendakian', // Judul aplikasi
+      title: 'Prediksi Waktu Pendakian',
       theme: ThemeData(
         primaryColor: Colors.green, // Warna utama aplikasi
         useMaterial3: true,
