@@ -3,17 +3,15 @@ import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../widgets/route_card.dart';
 
-// Layar untuk menampilkan daftar jalur pendakian untuk gunung yang dipilih
 class RouteListScreen extends StatelessWidget {
   const RouteListScreen({super.key});
 
-  // Membangun tampilan daftar jalur pendakian
   @override
   Widget build(BuildContext context) {
     // Mengambil data gunung yang dipilih dari argumen navigasi sebelumnya
     final mountain = ModalRoute.of(context)?.settings.arguments as Mountain?;
 
-    // Data dummy untuk daftar jalur pendakian (data simulasi)
+    // Data dummy
     final routes = [
       HikingRoute(
         id: '1',
@@ -31,6 +29,7 @@ class RouteListScreen extends StatelessWidget {
       ),
     ];
 
+    // header
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -82,6 +81,7 @@ class RouteListScreen extends StatelessWidget {
                 ),
               ),
             ),
+            // Daftar jalur pendakian
             ...routes.map((route) {
               return RouteCard(
                 route: route,

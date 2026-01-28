@@ -41,6 +41,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // header home
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

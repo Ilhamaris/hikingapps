@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 
-// Layar untuk input parameter berat badan dan tas sebelum memulai pendakian
 class InputParameterScreen extends StatefulWidget {
   const InputParameterScreen({super.key});
 
@@ -12,9 +11,7 @@ class InputParameterScreen extends StatefulWidget {
 
 // Kelas State untuk mengelola input parameter pendakian
 class _InputParameterScreenState extends State<InputParameterScreen> {
-  // Pengontrol untuk input berat badan pengguna dalam kilogram
   final _bodyWeightController = TextEditingController();
-  // Pengontrol untuk input berat tas/perlengkapan dalam kilogram
   final _bagWeightController = TextEditingController();
 
   // Membersihkan pengontrol saat widget dihapus dari memori
