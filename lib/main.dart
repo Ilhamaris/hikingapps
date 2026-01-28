@@ -7,8 +7,10 @@ import 'screens/hiking_map_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
 
-// Fungsi menjalankan aplikasi
-void main() {
+// Fungsi utama yang menjalankan aplikasi Flutter
+void main() async {
+  // Inisialisasi flutter_map_tile_caching sebelum menjalankan aplikasi
+  // Tile caching akan diinisialisasi secara otomatis saat pertama kali digunakan
   runApp(const MyApp());
 }
 

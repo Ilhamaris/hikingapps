@@ -1,174 +1,135 @@
-> **Role**
-> You are a senior Flutter mobile engineer specialized in offline map and outdoor navigation apps.
+**Context**
+I'm building a Flutter app for mountain climbing.
+I want to add an app that uses **OpenStreetMap + flutter_map** and must support **offline maps** by **downloading tiles after the user selects a hiking trail (GPX)** and then caching them.
 
-> **Objective**
-> Build a **Flutter mobile application** that visually matches the provided hiking app screenshots and **displays an offline map with a hiking trail loaded from a GPX file**.
+Framework & tools:
 
----
-
-## 1️⃣ Tech Stack (STRICT – DO NOT CHANGE)
-
-* Framework: **Flutter**
-* Language: **Dart**
-* State management: **basic (StatefulWidget / ChangeNotifier-ready)**
-* Map library: **flutter_map**
-* Offline tiles: **MBTiles**
-* GPX parsing: **gpx package**
-* Location: **geolocator**
-* Storage: **local assets / local file system**
-
-❌ Do NOT use Google Maps
-❌ Do NOT require internet connection
-❌ Do NOT use Mapbox API
+* flutter_map
+* flutter_map_tile_caching
+* GPX files are stored in `assets/gpx/`
 
 ---
 
-## 2️⃣ Map & GPX Requirements (CORE FEATURE)
+### TASK 1 — Parse GPX
 
-* Load **offline map tiles (MBTiles)** from local storage
-* Display map using **flutter_map**
-* Load a **GPX file from assets**
-* Parse GPX:
+Create Flutter code to:
 
-  * Track points → polyline
-  * Waypoints → markers (Pos, Puncak)
-* Render:
+* Read a GPX file from `assets/gpx`
+* Extract all trackpoints (latitude & longitude)
+* Generate a `List<LatLng>`
 
-  * GPX track as **dashed polyline**
-  * Waypoints as labeled markers
-* Show **current GPS position**
-* All map features must work **offline**
+Use a clean and reusable code structure.
 
 ---
 
-## 3️⃣ Screen Flow (MATCH THE UI)
+### TASK 2 — Calculate the Path Bounding Box
 
-### 🏠 Home Screen
+From `List<LatLng>`, GPX results:
 
-* Title: *Prediksi Waktu Pendakian*
-* Two cards:
+* Calculate:
 
-  * Informasi Jalur Pendakian
-  * Riwayat Pendakian
+* north (maximum latitude)
+* south (minimum latitude)
+* east (maximum longitude)
+* west (minimum longitude)
+* Add a buffer area ±500 meters from the bounding box
 
----
-
-### 🏔️ Informasi Gunung
-
-* Search bar (UI only)
-* List of mountains (mock data)
-* Button: **Pilih Jalur**
+The output is a bounding box object ready to be used for downloading tiles.
 
 ---
 
-### 🥾 Pilih Jalur Pendakian
+### TASK 3 — Tile Cache Initialization
 
-* List of hiking routes
-* Each route links to a **specific GPX file**
+Implement the `flutter_map_tile_caching` initialization:
 
----
-
-### 🧍 Input Parameter
-
-* Berat Badan (kg)
-* Berat Tas (kg)
-* Button: **Mulai Pendakian**
+* Create a cache store named `"jalurCache"`
+* Initialization is done in `main()` before `runApp()`
+* Ensure the cache is stored in internal storage (not assets)
 
 ---
 
-### 🗺️ Peta Pendakian (IMPORTANT)
+### TASK 4 — Download Tiles Based on Route
 
-* Full-screen offline map
-* Display:
+Create a function:
 
-  * GPX hiking route
-  * Pos-pos pendakian
-  * Puncak
-  * Current user location
-* Bottom sheet:
-
-  * Estimasi waktu ke pos (mock values)
-* Floating buttons:
-
-  * Center location
-  * Compass (UI only)
-
----
-
-### ⏱️ Selesaikan Pendakian Dialog
-
-* Modal confirmation
-* Save dummy hiking data
-
----
-
-### 📜 Riwayat Pendakian
-
-* List of past hikes (mock)
-
----
-
-### 📊 Detail Riwayat
-
-* Segment-by-segment time breakdown
-
----
-
-## 4️⃣ UI Design Rules (MATCH SCREENSHOTS)
-
-* Primary color: **Green**
-* Rounded cards
-* Soft shadows
-* Bottom sheet on map screen
-* Clean outdoor navigation aesthetic
-* One screen = one widget file
-
----
-
-## 5️⃣ Code Structure (MANDATORY)
-
-```
-lib/
- ├─ main.dart
- ├─ screens/
- │   ├─ home_screen.dart
- │   ├─ mountain_list_screen.dart
- │   ├─ route_list_screen.dart
- │   ├─ input_parameter_screen.dart
- │   ├─ hiking_map_screen.dart
- │   ├─ history_screen.dart
- │   └─ history_detail_screen.dart
- ├─ widgets/
- │   ├─ mountain_card.dart
- │   ├─ route_card.dart
- │   └─ bottom_sheet_estimation.dart
- ├─ models/
- │   ├─ mountain.dart
- │   ├─ hiking_route.dart
- │   └─ hiking_history.dart
- └─ services/
-     ├─ gpx_service.dart
-     └─ location_service.dart
+```dart
+Future<void> downloadTilesForRoute(BoundingBox box)
 ```
 
+The function must:
+
+* Use `flutter_map_tile_caching`
+* Download tiles based on the bounding box
+* Use zoom levels:
+
+* minZoom: 14
+* maxZoom: 16
+* Run **only once after the user selects a route**
+
+Add a short explanatory comment to the code.
+
 ---
 
-## 6️⃣ Explicit Constraints (DO NOT BREAK)
+### TASK 5 — Path Cache Status
 
-* No online map tiles
-* No API calls
-* No automatic route generation
-* GPX is the **single source of truth** for hiking paths
+Add a simple mechanism:
+
+* Store the status of whether a tile for a path has been downloaded.
+* Use the path identifier (e.g., GPX file name).
+* Can use SharedPreferences or a simple local mechanism.
+
+Goal: Prevent repeated downloads.
 
 ---
 
-## 7️⃣ Deliverables
+### TASK 6 — Display a Map Using a Cache
 
-* Fully working Flutter app
-* Offline map visible
-* GPX trail rendered
-* UI matches provided screenshots
-* Clear comments on:
+Implement `FlutterMap` with:
 
-  * GPX parsing
-  * Offline map setup
+* `TileLayer` using `TileProvider` from the cache.
+* Normal mode: online + cache.
+* Tracking mode: `offlineOnly = true.`
+
+Separate the TileLayer configuration for easy mode switching.
+
+---
+
+### TASK 7 — UI Flow
+
+Implement the following flow:
+
+1. User selects a hiking trail
+2. System:
+
+* Parse GPX
+* Calculate bounding box
+* Check cache status
+3. If no cache exists:
+
+* Start downloading tiles
+* Show a loading indicator
+4. When finished:
+
+* Mark the trail as “offline ready”
+* Show the map
+
+---
+
+### CONSTRAINTS
+
+* Do not download tiles in the map page's `initState`
+* Do not hardcode bounding boxes
+* Do not store tiles in the `assets` folder
+* Code should be modular and easily testable
+* Focus on a stable architecture, not shortcuts
+
+---
+
+### EXPECTED OUTPUT
+
+* Separate files/classes for:
+
+* GPX parser
+* Bounding box calculator
+* Tile downloader
+* Map screen

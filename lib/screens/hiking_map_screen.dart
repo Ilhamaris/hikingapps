@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/hiking_route.dart';
 import '../services/gpx_service.dart';
@@ -44,13 +45,11 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     if (route != null) {
       // Mengambil lokasi pengguna saat ini dari layanan GPS
       final userLocation = await LocationService.getCurrentLocation();
-      
+
       // Memuat jalur trek dari file GPX
-      final trackPoints =
-          await GPXService.loadGPXTrack(route.gpxFileName);
+      final trackPoints = await GPXService.loadGPXTrack(route.gpxFileName);
       // Memuat semua waypoint (titik orientasi) dari file GPX
-      final waypoints =
-          await GPXService.loadGPXWaypoints(route.gpxFileName);
+      final waypoints = await GPXService.loadGPXWaypoints(route.gpxFileName);
 
       // Memperbarui state dengan data yang sudah dimuat
       setState(() {
@@ -63,16 +62,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       // Pusatkan tampilan peta ke lokasi pengguna
       if (userLocation != null) {
         // Pindahkan peta ke lokasi pengguna dengan level zoom 15
-        _mapController.move(
-          userLocation,
-          15,
-        );
+        _mapController.move(userLocation, 15);
       } else if (_trackPoints.isNotEmpty) {
         // Jika tidak bisa mendapat lokasi pengguna, gunakan titik awal jalur
-        _mapController.move(
-          _trackPoints[0],
-          15,
-        );
+        _mapController.move(_trackPoints[0], 15);
       }
     } else {
       // Jika rute tidak ditemukan, hentikan loading dan tampilkan error
@@ -104,9 +97,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -145,10 +136,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         elevation: 0,
         title: Text(
           route.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -162,7 +150,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter: _userLocation ??
+                initialCenter:
+                    _userLocation ??
                     (_trackPoints.isNotEmpty
                         ? _trackPoints[0]
                         : const LatLng(-6.9271, 107.7085)), // Default to Java
@@ -171,10 +160,15 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                 maxZoom: 18,
               ),
               children: [
+                // Tile layer dengan cache offline
+                // Menggunakan tile provider dari flutter_map_tile_caching
+                // untuk menampilkan tile lokal atau online dengan fallback
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  tileProvider: FMTC.instance('default').getTileProvider(),
+                  userAgentPackageName: 'com.example.hikingapps',
                 ),
+
                 // Draw GPX track as polyline
                 if (_trackPoints.isNotEmpty)
                   PolylineLayer(
@@ -188,29 +182,53 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                   ),
                 // Draw waypoints as markers
                 MarkerLayer(
-                markers: [
-                  ..._waypoints.entries.map((entry) {
-                    return Marker(
-                      point: entry.value,
-                      width: 40,
-                      height: 40,
-                      child: GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(entry.key),
-                              duration: const Duration(seconds: 2),
+                  markers: [
+                    ..._waypoints.entries.map((entry) {
+                      return Marker(
+                        point: entry.value,
+                        width: 40,
+                        height: 40,
+                        child: GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(entry.key),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    // User location marker
+                    if (_userLocation != null)
+                      Marker(
+                        point: _userLocation!,
+                        width: 40,
+                        height: 40,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.green,
+                            color: Colors.blue,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            ),
+                            border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.2),
@@ -219,45 +237,15 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                             ],
                           ),
                           child: const Icon(
-                            Icons.location_on,
+                            Icons.person_pin_circle,
                             color: Colors.white,
                             size: 24,
                           ),
                         ),
                       ),
-                    );
-                  }),
-                  // User location marker
-                  if (_userLocation != null)
-                    Marker(
-                      point: _userLocation!,
-                      width: 40,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.person_pin_circle,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
             ),
           ),
           // Floating Action Buttons
