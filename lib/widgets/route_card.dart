@@ -15,7 +15,7 @@ class RouteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // Mendeteksi saat pengguna mengetuk kartu
+      onTap: onTap, // klik kartu
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

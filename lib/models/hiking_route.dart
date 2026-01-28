@@ -6,7 +6,7 @@ class HikingRoute {
   final String gpxFileName;
   final List<String> waypoints;
 
-  // Konstruktor untuk menginisialisasi semua properti rute pendakian
+  // menginisialisasi objek rute pendakian
   HikingRoute({
     required this.id,
     required this.name,

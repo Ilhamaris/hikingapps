@@ -7,7 +7,7 @@ class Mountain {
   final String description;
   final String imagePath;
 
-  // Konstruktor untuk menginisialisasi semua properti gunung
+  // menginisialisasi objek gunung
   Mountain({
     required this.id,
     required this.name,
