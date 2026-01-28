@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-// Layar utama aplikasi yang menampilkan menu navigasi utama
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // Membangun tampilan beranda dengan opsi menu utama
   @override
   Widget build(BuildContext context) {
     // Widget Scaffold untuk struktur dasar layar Android Material
