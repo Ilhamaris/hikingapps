@@ -1,4 +1,4 @@
-// Kelas untuk merepresentasikan data gunung
+// merepresentasikan data gunung
 class Mountain {
   final String id;
   final String name;
