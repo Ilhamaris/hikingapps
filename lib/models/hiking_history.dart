@@ -1,6 +1,6 @@
 // Kelas riwayat pendakian 
   class HikingHistory {
-  final String id;
+  final int id;
   final String mountainName;
   final String routeName;
   final DateTime date;

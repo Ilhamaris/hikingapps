@@ -11,7 +11,7 @@ class HistoryScreen extends StatelessWidget {
     // Data dummy untuk demonstrasi riwayat pendakian
     final histories = [
       HikingHistory(
-        id: '1',
+        id: 1,
         mountainName: 'Gunung Gede',
         routeName: 'Jalur Cibodas',
         date: DateTime(2025, 12, 15),
@@ -37,7 +37,7 @@ class HistoryScreen extends StatelessWidget {
         ],
       ),
       HikingHistory(
-        id: '2',
+        id: 2,
         mountainName: 'Gunung Merbabu',
         routeName: 'Jalur Selo',
         date: DateTime(2025, 12, 8),

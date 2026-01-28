@@ -12,7 +12,7 @@ class MountainListScreen extends StatelessWidget {
     // Data dummy untuk daftar gunung (data simulasi)
     final mountains = [
       Mountain(
-        id: '1',
+        id: 1,
         name: 'Gunung Gede',
         location: 'Jawa Barat',
         elevation: 2958,
@@ -21,7 +21,7 @@ class MountainListScreen extends StatelessWidget {
         imagePath: 'assets/images/gede.jpg',
       ),
       Mountain(
-        id: '2',
+        id: 2,
         name: 'Gunung Semeru',
         location: 'Jawa Timur',
         elevation: 3676,
@@ -30,7 +30,7 @@ class MountainListScreen extends StatelessWidget {
         imagePath: 'assets/images/semeru.jpg',
       ),
       Mountain(
-        id: '3',
+        id: 3,
         name: 'Gunung Merbabu',
         location: 'Jawa Tengah',
         elevation: 3145,

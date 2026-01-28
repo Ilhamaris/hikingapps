@@ -14,14 +14,14 @@ class RouteListScreen extends StatelessWidget {
     // Data dummy
     final routes = [
       HikingRoute(
-        id: '1',
+        id: 1,
         name: 'Jalur Selo',
         distance: 6.5,
         gpxFileName: 'jalur_selo.gpx',
         waypoints: ['Pos 1 Selo', 'Pos 2 Selo', 'Puncak'],
       ),
       HikingRoute(
-        id: '2',
+        id: 2,
         name: 'Jalur Wekas',
         distance: 8.2,
         gpxFileName: 'jalur_wekas.gpx',

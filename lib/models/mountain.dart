@@ -1,6 +1,6 @@
 // merepresentasikan data gunung
 class Mountain {
-  final String id;
+  final int id;
   final String name;
   final String location;
   final double elevation;
