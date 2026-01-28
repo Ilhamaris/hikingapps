@@ -21,7 +21,7 @@ class MountainCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          // Menambahkan bayangan untuk efek kedalaman
+          // efek bayangan
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
