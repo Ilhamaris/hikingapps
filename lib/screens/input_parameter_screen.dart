@@ -165,9 +165,10 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                       return;
                     }
 
+                    // Navigate to history screen instead of hiking map
                     Navigator.pushNamed(
                       context,
-                      '/hiking-map',
+                      '/history',
                       arguments: {
                         'mountain': mountain,
                         'route': route,

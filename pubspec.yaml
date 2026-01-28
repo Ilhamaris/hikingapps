@@ -9,12 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^7.0.0
-  latlong2: ^0.9.1
-  gpx: ^2.2.0
-  xml: ^6.5.0
-  geolocator: ^11.0.0
-  location: ^7.0.0
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +17,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/gpx/
-    - assets/tiles/

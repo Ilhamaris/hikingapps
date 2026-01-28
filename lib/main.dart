@@ -3,7 +3,6 @@ import 'screens/home_screen.dart';
 import 'screens/mountain_list_screen.dart';
 import 'screens/route_list_screen.dart';
 import 'screens/input_parameter_screen.dart';
-import 'screens/hiking_map_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
 
@@ -49,13 +48,11 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const HomeScreen(), // Layar pertama yang ditampilkan
-      // rute navigasi aplikasi
       routes: {
         '/home': (context) => const HomeScreen(), // Layar beranda
         '/mountain-list': (context) => const MountainListScreen(),
         '/route-list': (context) => const RouteListScreen(),
         '/input-parameter': (context) => const InputParameterScreen(),
-        '/hiking-map': (context) => const HikingMapScreen(),
         '/history': (context) => const HistoryScreen(),
         '/history-detail': (context) => const HistoryDetailScreen(),
       },
