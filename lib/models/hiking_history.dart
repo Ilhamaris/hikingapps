@@ -1,4 +1,3 @@
-// Kelas riwayat pendakian 
   class HikingHistory {
   final int id;
   final String mountainName;
@@ -9,8 +8,7 @@
   final double bagWeight;
   final List<RouteSegment> segments;
 
-  // menginisialisasi objek riwayat pendakian
-  HikingHistory({
+ HikingHistory({
     required this.id,
     required this.mountainName,
     required this.routeName,
@@ -22,13 +20,11 @@
   });
 }
 
-// merepresentasikan satu segmen atau bagian dari rute pendakian
 class RouteSegment {
   final String from;
   final String to;
   final Duration estimatedTime;
 
-  // menginisialisasi objek segmen rute
   RouteSegment({
     required this.from,
     required this.to,

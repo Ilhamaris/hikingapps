@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/hiking_history.dart';
 
-// Layar untuk menampilkan detail lengkap dari satu riwayat pendakian
+// halaman detail riwayat pendakian
 class HistoryDetailScreen extends StatelessWidget {
   const HistoryDetailScreen({super.key});
 

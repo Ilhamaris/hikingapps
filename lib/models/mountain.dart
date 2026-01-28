@@ -1,4 +1,3 @@
-// merepresentasikan data gunung
 class Mountain {
   final int id;
   final String name;
@@ -7,7 +6,6 @@ class Mountain {
   final String description;
   final String imagePath;
 
-  // menginisialisasi objek gunung
   Mountain({
     required this.id,
     required this.name,
