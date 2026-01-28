@@ -5,12 +5,12 @@ import '../models/hiking_history.dart';
 class HistoryDetailScreen extends StatelessWidget {
   const HistoryDetailScreen({super.key});
 
-  // Membangun tampilan detail riwayat pendakian
   @override
   Widget build(BuildContext context) {
     // Mengambil data riwayat pendakian dari argumen navigasi
     final history = ModalRoute.of(context)?.settings.arguments as HikingHistory?;
 
+    // header
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -64,7 +64,7 @@ class HistoryDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // Summary
+              // ringkasan
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
