@@ -17,16 +17,16 @@ class RouteListScreen extends StatelessWidget {
     final routes = [
       HikingRoute(
         id: '1',
-        name: 'Jalur Selo',
+        name: 'Jalur Suwanting',
         distance: 6.5,
-        gpxFileName: 'jalur_selo.gpx',
-        waypoints: ['Pos 1 Selo', 'Pos 2 Selo', 'Puncak'],
+        gpxFileName: 'Mount_Merbabu_via_Suwanting.gpx',
+        waypoints: ['Pos 1 Suwanting', 'Pos 2 Suwanting', 'Puncak'],
       ),
       HikingRoute(
         id: '2',
         name: 'Jalur Wekas',
         distance: 8.2,
-        gpxFileName: 'jalur_wekas.gpx',
+        gpxFileName: 'Mount_Merbabu_via_Suwanting.gpx',
         waypoints: ['Pos 1', 'Pos 2', 'Pos 3', 'Puncak'],
       ),
     ];

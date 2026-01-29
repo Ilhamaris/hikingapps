@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
-import '../services/gpx_service.dart';
-import '../services/bounding_box_calculator.dart';
-import '../services/tile_download_service.dart';
-import '../services/tile_cache_status_service.dart';
 
 // Layar untuk input parameter berat badan dan tas sebelum memulai pendakian
 class InputParameterScreen extends StatefulWidget {
@@ -156,7 +152,7 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () async {
+                  onPressed: () {
                     final bodyWeight = _bodyWeightController.text;
                     final bagWeight = _bagWeightController.text;
 
@@ -169,16 +165,16 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                       return;
                     }
 
-                    // Tampilkan dialog untuk mengecek dan mengunduh tile jika diperlukan
-                    if (context.mounted) {
-                      _showTileDownloadDialog(
-                        context,
-                        route!,
-                        mountain!,
-                        double.parse(bodyWeight),
-                        double.parse(bagWeight),
-                      );
-                    }
+                    Navigator.pushNamed(
+                      context,
+                      '/hiking-map',
+                      arguments: {
+                        'mountain': mountain,
+                        'route': route,
+                        'bodyWeight': double.parse(bodyWeight),
+                        'bagWeight': double.parse(bagWeight),
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -201,184 +197,6 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  /// Menampilkan dialog untuk mengecek dan mengunduh tile jika diperlukan
-  /// 
-  /// Dialog akan:
-  /// 1. Mengecek apakah tile sudah diunduh
-  /// 2. Jika belum, tampilkan loading dan unduh tile
-  /// 3. Jika sudah, langsung navigasi ke halaman peta
-  void _showTileDownloadDialog(
-    BuildContext context,
-    HikingRoute route,
-    Mountain mountain,
-    double bodyWeight,
-    double bagWeight,
-  ) async {
-    // Cek apakah tile sudah diunduh sebelumnya
-    final isCached = await TileCacheStatusService.isCacheDownloaded(
-      route.gpxFileName,
-    );
-
-    if (!context.mounted) return;
-
-    if (isCached) {
-      // Jika tile sudah ada, langsung navigasi ke peta
-      Navigator.pushNamed(
-        context,
-        '/hiking-map',
-        arguments: {
-          'mountain': mountain,
-          'route': route,
-          'bodyWeight': bodyWeight,
-          'bagWeight': bagWeight,
-        },
-      );
-    } else {
-      // Jika tile belum ada, tampilkan dialog untuk mengunduh
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => _TileDownloadDialog(
-          route: route,
-          mountain: mountain,
-          bodyWeight: bodyWeight,
-          bagWeight: bagWeight,
-        ),
-      );
-    }
-  }
-}
-
-/// Widget dialog untuk mengunduh tile peta
-class _TileDownloadDialog extends StatefulWidget {
-  final HikingRoute route;
-  final Mountain mountain;
-  final double bodyWeight;
-  final double bagWeight;
-
-  const _TileDownloadDialog({
-    required this.route,
-    required this.mountain,
-    required this.bodyWeight,
-    required this.bagWeight,
-  });
-
-  @override
-  State<_TileDownloadDialog> createState() => _TileDownloadDialogState();
-}
-
-class _TileDownloadDialogState extends State<_TileDownloadDialog> {
-  double _downloadProgress = 0;
-  bool _isDownloading = false;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _startDownload();
-  }
-
-  /// Memulai proses download tile untuk jalur yang dipilih
-  void _startDownload() async {
-    setState(() {
-      _isDownloading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // Muat track points dari file GPX
-      final trackPoints = await GPXService.loadGPXTrack(
-        widget.route.gpxFileName,
-      );
-
-      if (!mounted) return;
-
-      // Hitung bounding box dari track points
-      final boundingBox = BoundingBoxCalculator.calculateBoundingBox(
-        trackPoints,
-      );
-
-      // Unduh tile untuk area yang sudah dihitung
-      await TileDownloadService.downloadTilesForRoute(
-        boundingBox,
-        onProgress: (progress) {
-          if (mounted) {
-            setState(() {
-              _downloadProgress = progress;
-            });
-          }
-        },
-      );
-
-      if (!mounted) return;
-
-      // Tandai jalur sebagai sudah diunduh
-      await TileCacheStatusService.setCacheDownloaded(
-        widget.route.gpxFileName,
-      );
-
-      if (!mounted) return;
-
-      // Tutup dialog dan navigasi ke halaman peta
-      Navigator.pop(context);
-      Navigator.pushNamed(
-        context,
-        '/hiking-map',
-        arguments: {
-          'mountain': widget.mountain,
-          'route': widget.route,
-          'bodyWeight': widget.bodyWeight,
-          'bagWeight': widget.bagWeight,
-        },
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isDownloading = false;
-          _errorMessage = 'Gagal mengunduh tile: $e';
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Mengunduh Peta Offline'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_isDownloading) ...[
-            LinearProgressIndicator(
-              value: _downloadProgress,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${(_downloadProgress * 100).toStringAsFixed(1)}%',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Mengunduh tile peta untuk area offline...',
-              textAlign: TextAlign.center,
-            ),
-          ] else if (_errorMessage != null) ...[
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-          ],
-        ],
-      ),
-      actions: [
-        if (_errorMessage != null)
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kembali'),
-          ),
-      ],
     );
   }
 }

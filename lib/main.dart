@@ -3,16 +3,18 @@ import 'screens/home_screen.dart';
 import 'screens/mountain_list_screen.dart';
 import 'screens/route_list_screen.dart';
 import 'screens/input_parameter_screen.dart';
-import 'screens/hiking_map_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
+import 'screens/hiking_map_screen.dart';
+import 'models/mountain.dart';
+import 'models/hiking_route.dart';
 
 // Fungsi utama yang menjalankan aplikasi Flutter
 void main() async {
-  // Inisialisasi flutter_map_tile_caching sebelum menjalankan aplikasi
-  // Tile caching akan diinisialisasi secara otomatis saat pertama kali digunakan
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
+
 
 /// Widget utama aplikasi
 class MyApp extends StatelessWidget {
@@ -57,9 +59,31 @@ class MyApp extends StatelessWidget {
         '/mountain-list': (context) => const MountainListScreen(),
         '/route-list': (context) => const RouteListScreen(),
         '/input-parameter': (context) => const InputParameterScreen(),
-        '/hiking-map': (context) => const HikingMapScreen(),
         '/history': (context) => const HistoryScreen(),
         '/history-detail': (context) => const HistoryDetailScreen(),
+        '/hiking-map': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map?;
+          final mountain = args?['mountain'] as Mountain?;
+          final route = args?['route'] as HikingRoute?;
+          final bodyWeight = args?['bodyWeight'] as double? ?? 0.0;
+          final bagWeight = args?['bagWeight'] as double? ?? 0.0;
+          
+          if (mountain == null || route == null) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Error')),
+              body: const Center(
+                child: Text('Mountain or Route data is missing'),
+              ),
+            );
+          }
+          
+          return HikingMapScreen(
+            mountain: mountain,
+            route: route,
+            bodyWeight: bodyWeight,
+            bagWeight: bagWeight,
+          );
+        },
       },
     );
   }

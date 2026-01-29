@@ -1,351 +1,304 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
+import '../models/mountain.dart';
 import '../models/hiking_route.dart';
+import '../models/bounding_box.dart';
 import '../services/gpx_service.dart';
-import '../services/location_service.dart';
-import '../widgets/bottom_sheet_estimation.dart';
+import '../services/bounding_box_calculator.dart';
+import '../config/tile_config.dart';
 
+/// Layar untuk menampilkan peta hiking dengan rute GPX
 class HikingMapScreen extends StatefulWidget {
-  const HikingMapScreen({super.key});
+  final Mountain mountain;
+  final HikingRoute route;
+  final double bodyWeight;
+  final double bagWeight;
+
+  const HikingMapScreen({
+    super.key,
+    required this.mountain,
+    required this.route,
+    required this.bodyWeight,
+    required this.bagWeight,
+  });
 
   @override
   State<HikingMapScreen> createState() => _HikingMapScreenState();
 }
 
-// Kelas State untuk mengelola status layar peta pendakian
 class _HikingMapScreenState extends State<HikingMapScreen> {
-  // Pengontrol untuk mengelola peta interaktif
-  late MapController _mapController;
-  // Daftar titik-titik GPS yang membentuk jalur pendakian
-  List<LatLng> _trackPoints = [];
-  // Pemetaan nama lokasi ke koordinat waypoint
-  Map<String, LatLng> _waypoints = {};
-  // Lokasi pengguna saat ini dari GPS
-  LatLng? _userLocation;
-  // Status apakah peta sedang dimuat
-  bool _isLoadingMap = true;
+  late MapController mapController;
+  List<LatLng> routePoints = [];
+  Map<String, LatLng> waypoints = {};
+  bool isLoading = true;
+  String? errorMessage;
+  BoundingBox? routeBounds;
 
-  // Menginisialisasi state widget saat pertama kali dibuat
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
-    _initializeMap();
+    mapController = MapController();
+    _loadGPXData();
   }
 
-  // Fungsi untuk memuat data peta, jalur GPX, dan lokasi pengguna
-  Future<void> _initializeMap() async {
-    // Mengambil argumen rute dari parameter navigasi
-    final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    final route = args?['route'] as HikingRoute?;
+  /// Load GPX track points and waypoints
+  Future<void> _loadGPXData() async {
+    try {
+      // Load track points
+      final trackPoints = await GPXService.loadGPXTrack(
+        widget.route.gpxFileName,
+      );
 
-    // Memastikan rute sudah dipilih sebelum memuat data
-    if (route != null) {
-      // Mengambil lokasi pengguna saat ini dari layanan GPS
-      final userLocation = await LocationService.getCurrentLocation();
+      // Load waypoints
+      final waypointsList = await GPXService.loadGPXWaypoints(
+        widget.route.gpxFileName,
+      );
 
-      // Memuat jalur trek dari file GPX
-      final trackPoints = await GPXService.loadGPXTrack(route.gpxFileName);
-      // Memuat semua waypoint (titik orientasi) dari file GPX
-      final waypoints = await GPXService.loadGPXWaypoints(route.gpxFileName);
+      if (mounted) {
+        // Calculate bounds from route for later caching
+        if (trackPoints.isNotEmpty) {
+          final routeBoundingBox = BoundingBoxCalculator.calculateBoundingBox(
+            trackPoints,
+          );
+          routeBounds = routeBoundingBox;
+        }
 
-      // Memperbarui state dengan data yang sudah dimuat
-      setState(() {
-        _trackPoints = trackPoints;
-        _waypoints = waypoints;
-        _userLocation = userLocation;
-        _isLoadingMap = false; // Tandai selesai loading
-      });
+        setState(() {
+          routePoints = trackPoints;
+          waypoints = waypointsList;
+          isLoading = false;
+        });
 
-      // Pusatkan tampilan peta ke lokasi pengguna
-      if (userLocation != null) {
-        // Pindahkan peta ke lokasi pengguna dengan level zoom 15
-        _mapController.move(userLocation, 15);
-      } else if (_trackPoints.isNotEmpty) {
-        // Jika tidak bisa mendapat lokasi pengguna, gunakan titik awal jalur
-        _mapController.move(_trackPoints[0], 15);
+        // Fit camera after loading data
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _fitCameraToRoute();
+        });
       }
-    } else {
-      // Jika rute tidak ditemukan, hentikan loading dan tampilkan error
-      setState(() {
-        _isLoadingMap = false;
-      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'Gagal memuat data GPX: $e';
+        });
+      }
     }
   }
 
-  // Membersihkan sumber daya saat widget dihapus
+  /// Fit camera to show entire route with padding
+  void _fitCameraToRoute() {
+    if (routePoints.isEmpty) return;
+
+    final boundingBox = BoundingBoxCalculator.calculateBoundingBox(routePoints);
+    final bounds = boundingBox.toLatLngBounds();
+
+    mapController.fitCamera(
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(100)),
+    );
+  }
+
   @override
   void dispose() {
-    _mapController.dispose();
+    mapController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    final route = args?['route'] as HikingRoute?;
-
-    if (_isLoadingMap) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.green,
-          title: const Text('Peta Pendakian'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // Jika rute tidak ditemukan, tampilkan pesan error
-    if (route == null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.green,
-          title: const Text('Peta Pendakian'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text('Rute tidak ditemukan'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Kembali'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         elevation: 0,
-        title: Text(
-          route.name,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        title: const Text(
+          'Peta Hiking',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
-        children: [
-          // Map - expanded to fill available space
-          Positioned.fill(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter:
-                    _userLocation ??
-                    (_trackPoints.isNotEmpty
-                        ? _trackPoints[0]
-                        : const LatLng(-6.9271, 107.7085)), // Default to Java
-                initialZoom: 15,
-                minZoom: 5,
-                maxZoom: 18,
-              ),
-              children: [
-                // Tile layer dengan cache offline
-                // Menggunakan tile provider dari flutter_map_tile_caching
-                // untuk menampilkan tile lokal atau online dengan fallback
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  tileProvider: FMTC.instance('default').getTileProvider(),
-                  userAgentPackageName: 'com.example.hikingapps',
-                ),
-
-                // Draw GPX track as polyline
-                if (_trackPoints.isNotEmpty)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _trackPoints,
-                        strokeWidth: 4,
-                        color: Colors.green,
-                      ),
-                    ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(errorMessage!),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isLoading = true;
+                        errorMessage = null;
+                      });
+                      _loadGPXData();
+                    },
+                    child: const Text('Coba Lagi'),
                   ),
-                // Draw waypoints as markers
-                MarkerLayer(
-                  markers: [
-                    ..._waypoints.entries.map((entry) {
-                      return Marker(
-                        point: entry.value,
-                        width: 40,
-                        height: 40,
-                        child: GestureDetector(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(entry.key),
-                                duration: const Duration(seconds: 2),
+                ],
+              ),
+            )
+          : Stack(
+              children: [
+                FlutterMap(
+                  mapController: mapController,
+                  options: const MapOptions(
+                    initialCenter: LatLng(0, 0),
+                    initialZoom: 13,
+                  ),
+                  children: [
+                    // OpenStreetMap tile layer (online only)
+                    TileLayer(
+                      urlTemplate: TileConfig.openStreetMapUrl,
+                      userAgentPackageName: TileConfig.userAgent,
+                    ),
+
+                    // Route polyline layer
+                    if (routePoints.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: routePoints,
+                            strokeWidth: 4,
+                            color: Colors.red,
+                          ),
+                        ],
+                      ),
+
+                    // Waypoints marker layer
+                    if (waypoints.isNotEmpty)
+                      MarkerLayer(
+                        markers: [
+                          for (final waypoint in waypoints.entries)
+                            Marker(
+                              point: waypoint.value,
+                              width: 80,
+                              height: 80,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.blue,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black87,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      waypoint.key,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 4,
-                                ),
-                              ],
                             ),
-                            child: const Icon(
-                              Icons.location_on,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                    // User location marker
-                    if (_userLocation != null)
-                      Marker(
-                        point: _userLocation!,
-                        width: 40,
-                        height: 40,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.person_pin_circle,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
+                        ],
                       ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          // Floating Action Buttons
-          Positioned(
-            bottom: 120,
-            right: 16,
-            child: Column(
-              children: [
-                FloatingActionButton(
-                  heroTag: 'center',
-                  backgroundColor: Colors.green,
-                  onPressed: () {
-                    if (_userLocation != null) {
-                      _mapController.move(_userLocation!, 15);
-                    } else if (_trackPoints.isNotEmpty) {
-                      _mapController.move(_trackPoints[0], 15);
-                    }
-                  },
-                  child: const Icon(Icons.my_location),
-                ),
-                const SizedBox(height: 16),
-                FloatingActionButton(
-                  heroTag: 'compass',
-                  backgroundColor: Colors.green,
-                  onPressed: () {
-                    // Compass functionality (UI only)
-                  },
-                  child: const Icon(Icons.explore),
-                ),
-              ],
-            ),
-          ),
-          // Bottom Sheet
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomSheetEstimation(
-              segments: [
-                EstimationSegment(
-                  location: 'Pos 1 Cibodas',
-                  hours: 1,
-                  minutes: 45,
-                ),
-                EstimationSegment(
-                  location: 'Pos 2 Cibodas',
-                  hours: 2,
-                  minutes: 10,
-                ),
-                EstimationSegment(
-                  location: 'Pos 3 Kandang Batu',
-                  hours: 1,
-                  minutes: 25,
-                ),
-                EstimationSegment(
-                  location: 'Puncak Gunung',
-                  hours: 1,
-                  minutes: 10,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green,
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Selesaikan Pendakian?'),
-              content: const Text(
-                'Pendakian masih berlangsung. Jika Anda keluar sekarang, sistem akan mencatat pendakian sebagai selesai dan menyimpan data waktu tempuh.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Batal'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pendakian berhasil disimpan'),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+
+                // Info card at bottom
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.route.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.monitor_weight,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Berat: ${widget.bodyWeight.toStringAsFixed(0)} kg + ${widget.bagWeight.toStringAsFixed(0)} kg tas',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.straighten,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Jarak: ${widget.route.distance.toStringAsFixed(1)} km',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Text('Selesaikan Pendakian'),
                 ),
               ],
             ),
-          );
-        },
-        child: const Icon(Icons.check),
-      ),
     );
   }
 }

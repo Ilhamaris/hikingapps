@@ -1,3 +1,6 @@
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 // Model untuk merepresentasikan bounding box dari area geografis
 class BoundingBox {
   // Batas utara (latitude maksimum)
@@ -28,6 +31,14 @@ class BoundingBox {
 
   // Getter untuk mendapatkan tinggi area dalam derajat
   double get height => north - south;
+
+  /// Convert BoundingBox to LatLngBounds for use in map UI
+  LatLngBounds toLatLngBounds() {
+    return LatLngBounds(
+      LatLng(south, west),
+      LatLng(north, east),
+    );
+  }
 
   @override
   String toString() =>

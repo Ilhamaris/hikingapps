@@ -1,135 +1,451 @@
-**Context**
-I'm building a Flutter app for mountain climbing.
-I want to add an app that uses **OpenStreetMap + flutter_map** and must support **offline maps** by **downloading tiles after the user selects a hiking trail (GPX)** and then caching them.
+# Cobamaps - GPX Route Viewer
 
-Framework & tools:
+A Flutter application that loads and displays GPX files on an interactive map with polylines, auto-fit camera, and waypoint markers.
 
-* flutter_map
-* flutter_map_tile_caching
-* GPX files are stored in `assets/gpx/`
+## Project Architecture
+
+This project demonstrates a production-quality approach to displaying routes with typed waypoints. It follows separation of concerns: domain models, pure functions for logic, and stateful widgets for UI.
 
 ---
 
-### TASK 1 — Parse GPX
+## Implementation Steps
 
-Create Flutter code to:
+### Step 1: Project Setup & Dependencies
 
-* Read a GPX file from `assets/gpx`
-* Extract all trackpoints (latitude & longitude)
-* Generate a `List<LatLng>`
+**pubspec.yaml**
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+  gpx: ^2.2.0
+  file_picker: ^8.0.0
+  xml: ^6.5.0
 
-Use a clean and reusable code structure.
-
----
-
-### TASK 2 — Calculate the Path Bounding Box
-
-From `List<LatLng>`, GPX results:
-
-* Calculate:
-
-* north (maximum latitude)
-* south (minimum latitude)
-* east (maximum longitude)
-* west (minimum longitude)
-* Add a buffer area ±500 meters from the bounding box
-
-The output is a bounding box object ready to be used for downloading tiles.
-
----
-
-### TASK 3 — Tile Cache Initialization
-
-Implement the `flutter_map_tile_caching` initialization:
-
-* Create a cache store named `"jalurCache"`
-* Initialization is done in `main()` before `runApp()`
-* Ensure the cache is stored in internal storage (not assets)
-
----
-
-### TASK 4 — Download Tiles Based on Route
-
-Create a function:
-
-```dart
-Future<void> downloadTilesForRoute(BoundingBox box)
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
 ```
 
-The function must:
-
-* Use `flutter_map_tile_caching`
-* Download tiles based on the bounding box
-* Use zoom levels:
-
-* minZoom: 14
-* maxZoom: 16
-* Run **only once after the user selects a route**
-
-Add a short explanatory comment to the code.
+**What each package does:**
+- `flutter_map` - Interactive map rendering
+- `latlong2` - Latitude/Longitude type with utilities
+- `xml` - GPX file parsing
+- `latlong2` - Provides `LatLngBounds` for camera fitting
 
 ---
 
-### TASK 5 — Path Cache Status
+### Step 2: Load GPX File from Assets
 
-Add a simple mechanism:
+**Function: `loadGpxRoute()`**
 
-* Store the status of whether a tile for a path has been downloaded.
-* Use the path identifier (e.g., GPX file name).
-* Can use SharedPreferences or a simple local mechanism.
+```dart
+Future<List<LatLng>> loadGpxRoute() async {
+  final gpxString = await rootBundle.loadString('assets/Bukit_Mongkrang.gpx');
+  final document = xml.XmlDocument.parse(gpxString);
+  
+  final points = <LatLng>[];
+  final trkpts = document.findAllElements('trkpt');
+  
+  for (final trkpt in trkpts) {
+    final lat = double.parse(trkpt.getAttribute('lat')!);
+    final lon = double.parse(trkpt.getAttribute('lon')!);
+    points.add(LatLng(lat, lon));
+  }
+  
+  return points;
+}
+```
 
-Goal: Prevent repeated downloads.
+**How it works:**
+1. Load GPX file as string from assets
+2. Parse XML document
+3. Find all `<trkpt>` elements (track points)
+4. Extract `lat` and `lon` attributes
+5. Convert to `LatLng` objects
 
----
-
-### TASK 6 — Display a Map Using a Cache
-
-Implement `FlutterMap` with:
-
-* `TileLayer` using `TileProvider` from the cache.
-* Normal mode: online + cache.
-* Tracking mode: `offlineOnly = true.`
-
-Separate the TileLayer configuration for easy mode switching.
-
----
-
-### TASK 7 — UI Flow
-
-Implement the following flow:
-
-1. User selects a hiking trail
-2. System:
-
-* Parse GPX
-* Calculate bounding box
-* Check cache status
-3. If no cache exists:
-
-* Start downloading tiles
-* Show a loading indicator
-4. When finished:
-
-* Mark the trail as “offline ready”
-* Show the map
-
----
-
-### CONSTRAINTS
-
-* Do not download tiles in the map page's `initState`
-* Do not hardcode bounding boxes
-* Do not store tiles in the `assets` folder
-* Code should be modular and easily testable
-* Focus on a stable architecture, not shortcuts
+**GPX Structure:**
+```xml
+<gpx>
+  <trk>
+    <trkseg>
+      <trkpt lat="-7.67102" lon="111.18472">
+        <ele>1767.01</ele>
+      </trkpt>
+      <!-- More points... -->
+    </trkseg>
+  </trk>
+</gpx>
+```
 
 ---
 
-### EXPECTED OUTPUT
+### Step 3: Calculate Bounding Box for Auto-Fit
 
-* Separate files/classes for:
+**Function: `calculateBounds()`**
 
-* GPX parser
-* Bounding box calculator
-* Tile downloader
-* Map screen
+```dart
+LatLngBounds calculateBounds(List<LatLng> points) {
+  if (points.isEmpty) {
+    throw Exception('Cannot calculate bounds for empty point list');
+  }
+  
+  double minLat = points[0].latitude;
+  double maxLat = points[0].latitude;
+  double minLon = points[0].longitude;
+  double maxLon = points[0].longitude;
+  
+  for (final point in points) {
+    minLat = point.latitude < minLat ? point.latitude : minLat;
+    maxLat = point.latitude > maxLat ? point.latitude : maxLat;
+    minLon = point.longitude < minLon ? point.longitude : minLon;
+    maxLon = point.longitude > maxLon ? point.longitude : maxLon;
+  }
+  
+  return LatLngBounds(
+    LatLng(minLat, minLon),
+    LatLng(maxLat, maxLon),
+  );
+}
+```
+
+**Purpose:** Creates a geographic rectangle encompassing all route points. Used by `fitCamera()` to calculate optimal zoom level automatically.
+
+---
+
+### Step 4: Define Domain Model for Waypoints
+
+**Enum & Class**
+
+```dart
+enum WaypointType { pos, puncak }
+
+class Waypoint {
+  final LatLng point;
+  final WaypointType type;
+  final String name;
+
+  Waypoint({
+    required this.point,
+    required this.type,
+    required this.name,
+  });
+}
+```
+
+**Why separate from LatLng:**
+- Type-safe waypoint handling
+- Decouples UI from business logic
+- Enables icon/color mapping based on type
+
+---
+
+### Step 5: Create Sample Waypoint Data
+
+**Module-level variable:**
+
+```dart
+final List<Waypoint> sampleWaypoints = [
+  Waypoint(
+    point: LatLng(-7.67102, 111.18472),
+    type: WaypointType.pos,
+    name: 'Base Camp',
+  ),
+  Waypoint(
+    point: LatLng(-7.68899, 111.18622),
+    type: WaypointType.puncak,
+    name: 'Mongkrang Peak',
+  ),
+  Waypoint(
+    point: LatLng(-7.67585, 111.18432),
+    type: WaypointType.pos,
+    name: 'Rest Point',
+  ),
+];
+```
+
+**For production:** Replace with dynamic data from GPX parsing or network.
+
+---
+
+### Step 6: Icon & Color Mapping
+
+**Pure functions (outside build methods)**
+
+```dart
+IconData getWaypointIcon(WaypointType type) {
+  switch (type) {
+    case WaypointType.pos:
+      return Icons.location_on;
+    case WaypointType.puncak:
+      return Icons.flag;
+  }
+}
+
+Color getWaypointColor(WaypointType type) {
+  switch (type) {
+    case WaypointType.pos:
+      return Colors.orange;
+    case WaypointType.puncak:
+      return Colors.purple;
+  }
+}
+```
+
+**Benefits:**
+- Logic independent of widgets
+- Easy to test and modify
+- Reusable across components
+
+---
+
+### Step 7: Stateful Widget with MapController
+
+**Root widget:**
+
+```dart
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late MapController mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
+  }
+```
+
+**Why MapController:**
+- Required to call `fitCamera()` programmatically
+- Enables pan/zoom control
+- Must be disposed to prevent memory leaks
+
+---
+
+### Step 8: Load Data with FutureBuilder
+
+**In build method:**
+
+```dart
+FutureBuilder<List<LatLng>>(
+  future: loadGpxRoute(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (snapshot.hasError) {
+      return Center(child: Text('Error: ${snapshot.error}'));
+    }
+    
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const Center(child: Text('No route data found'));
+    }
+    
+    final route = snapshot.data!;
+    // Build map here
+  },
+)
+```
+
+**Pattern:**
+1. Display spinner while loading
+2. Handle errors gracefully
+3. Validate data before rendering
+4. Proceed with UI
+
+---
+
+### Step 9: Auto-Fit Camera (Post-Frame Callback)
+
+**Critical for correct camera fitting:**
+
+```dart
+WidgetsBinding.instance.addPostFrameCallback((_) {
+  final bounds = calculateBounds(route);
+  mapController.fitCamera(
+    CameraFit.bounds(
+      bounds: bounds,
+      padding: const EdgeInsets.all(100),
+    ),
+  );
+});
+```
+
+**Why post-frame callback is required:**
+- Map widget must be fully laid out before fitting
+- Uninitialized dimensions would cause incorrect zoom calculation
+- Callback executes after frame rendering completes
+- Camera fit then uses actual render context
+
+---
+
+### Step 10: Build FlutterMap with Layers
+
+**Layer order (bottom to top):**
+
+```dart
+FlutterMap(
+  mapController: mapController,
+  options: const MapOptions(
+    initialCenter: LatLng(0, 0),
+    initialZoom: 1,
+  ),
+  children: [
+    // Layer 1: Base tile map
+    TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'com.example.app',
+    ),
+
+    // Layer 2: Route polyline
+    PolylineLayer(
+      polylines: [
+        Polyline(
+          points: route,
+          strokeWidth: 4,
+          color: Colors.red,
+        ),
+      ],
+    ),
+
+    // Layer 3: Waypoint markers
+    MarkerLayer(
+      markers: [
+        for (final waypoint in sampleWaypoints)
+          Marker(
+            point: waypoint.point,
+            width: 60,
+            height: 80,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: getWaypointColor(waypoint.type),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Icon(
+                    getWaypointIcon(waypoint.type),
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    waypoint.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    ),
+  ],
+)
+```
+
+**Layer breakdown:**
+- **TileLayer**: OSM base map tiles
+- **PolylineLayer**: Red route line connecting all GPX points
+- **MarkerLayer**: Type-specific icons + labels for waypoints
+
+---
+
+## Quick Reference for Other Projects
+
+### Minimal Setup (Just Map + Polyline)
+
+```dart
+// 1. Dependencies
+flutter_map: ^6.1.0
+latlong2: ^0.9.1
+
+// 2. Load points
+final route = await loadGpxRoute();
+
+// 3. Calculate bounds
+final bounds = calculateBounds(route);
+
+// 4. Fit camera
+mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: EdgeInsets.all(100)));
+
+// 5. Render
+FlutterMap(
+  mapController: mapController,
+  children: [
+    TileLayer(urlTemplate: '...'),
+    PolylineLayer(polylines: [Polyline(points: route, color: Colors.red)]),
+  ],
+)
+```
+
+### Adding Waypoints
+
+1. Define enum for types: `enum WaypointType { start, end, checkpoint }`
+2. Create class: `class Waypoint { LatLng point; WaypointType type; String name; }`
+3. Add mapping functions: `getWaypointIcon()`, `getWaypointColor()`
+4. Render in `MarkerLayer` with icon/color from mappings
+
+---
+
+## File Structure
+
+```
+lib/
+  main.dart          // Main app + all logic
+  
+assets/
+  *.gpx              // GPS track files
+```
+
+---
+
+## Common Issues & Solutions
+
+| Issue | Solution |
+|-------|----------|
+| Map shows blank white screen | Check initialZoom, ensure assets/ in pubspec.yaml |
+| Camera doesn't fit route | Use post-frame callback, don't call fitCamera immediately |
+| Polyline not visible | Check layer order (PolylineLayer above TileLayer) |
+| Markers appear under polyline | Ensure MarkerLayer is last (top) in children list |
+| GPX not loading | Verify file in assets/, restart flutter run |
+
+---
+
+## Production Checklist
+
+- [ ] Replace hardcoded waypoints with GPX parsing
+- [ ] Add error handling for malformed GPX
+- [ ] Implement waypoint selection (onTap)
+- [ ] Add route statistics (distance, elevation)
+- [ ] Cache loaded routes in local storage
+- [ ] Add offline map support
+- [ ] Test with multiple GPX files
