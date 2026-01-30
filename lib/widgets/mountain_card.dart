@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/mountain.dart';
 
-/// Widget kartu untuk menampilkan informasi gunung
+// Widget kartu untuk menampilkan informasi gunung
 class MountainCard extends StatelessWidget {
   final Mountain mountain; // Data gunung
   final VoidCallback onTap; // Callback ketika kartu diklik
