@@ -8,13 +8,17 @@ import 'screens/history_detail_screen.dart';
 import 'screens/hiking_map_screen.dart';
 import 'models/mountain.dart';
 import 'models/hiking_route.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 // Fungsi utama yang menjalankan aplikasi Flutter
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(
+    widgetsBinding: WidgetsFlutterBinding.ensureInitialized(),
+  );
   runApp(const MyApp());
+  FlutterNativeSplash.remove();
 }
-
 
 /// Widget utama aplikasi
 class MyApp extends StatelessWidget {
@@ -67,7 +71,7 @@ class MyApp extends StatelessWidget {
           final route = args?['route'] as HikingRoute?;
           final bodyWeight = args?['bodyWeight'] as double? ?? 0.0;
           final bagWeight = args?['bagWeight'] as double? ?? 0.0;
-          
+
           if (mountain == null || route == null) {
             return Scaffold(
               appBar: AppBar(title: const Text('Error')),
@@ -76,7 +80,7 @@ class MyApp extends StatelessWidget {
               ),
             );
           }
-          
+
           return HikingMapScreen(
             mountain: mountain,
             route: route,

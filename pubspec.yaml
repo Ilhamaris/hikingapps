@@ -16,7 +16,8 @@ dependencies:
   geolocator: ^11.0.0
   location: ^7.0.0
   shared_preferences: ^2.2.0
-
+  flutter_native_splash: ^2.4.0
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -28,3 +29,20 @@ flutter:
   assets:
     - assets/gpx/
     - assets/tiles/
+    - assets/images/splashscreen.png
+    - assets/images/icon.png
+
+flutter_native_splash:
+  background_image: assets/images/splashscreen.png
+  android: true
+  ios: true
+  web: true
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+  web_image_mode: cover
+  fullscreen: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
