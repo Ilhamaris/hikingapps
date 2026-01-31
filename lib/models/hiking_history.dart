@@ -9,7 +9,6 @@ class HikingHistory {
   final double bagWeight;
   final List<RouteSegment> segments;
 
-  // Konstruktor untuk menginisialisasi semua properti riwayat pendakian
   HikingHistory({
     required this.id,
     required this.mountainName,
@@ -22,16 +21,11 @@ class HikingHistory {
   });
 }
 
-// Kelas untuk merepresentasikan satu segmen atau bagian dari rute pendakian
 class RouteSegment {
-  // Nama lokasi atau waypoint awal segmen
   final String from;
-  // Nama lokasi atau waypoint akhir segmen
   final String to;
-  // Waktu tempuh yang diperkirakan untuk segmen ini
   final Duration estimatedTime;
 
-  // Konstruktor untuk menginisialisasi properti segmen rute
   RouteSegment({
     required this.from,
     required this.to,
