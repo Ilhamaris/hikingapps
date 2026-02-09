@@ -7,8 +7,9 @@ import '../models/bounding_box.dart';
 import '../services/gpx_service.dart';
 import '../services/bounding_box_calculator.dart';
 import '../config/tile_config.dart';
+import '../services/location_service.dart';
+import 'dart:async';
 
-/// Layar untuk menampilkan peta hiking dengan rute GPX
 class HikingMapScreen extends StatefulWidget {
   final Mountain mountain;
   final HikingRoute route;
@@ -31,6 +32,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   late MapController mapController;
   List<LatLng> routePoints = [];
   Map<String, LatLng> waypoints = {};
+  LatLng? currentLocation;
+  StreamSubscription<LatLng>? _locationSubscription;
   bool isLoading = true;
   String? errorMessage;
   BoundingBox? routeBounds;
@@ -40,27 +43,43 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     super.initState();
     mapController = MapController();
     _loadGPXData();
+    _initLocation();
   }
 
-  /// Load GPX track points and waypoints
+  Future<void> _initLocation() async {
+    try {
+      final loc = await LocationService.getCurrentLocation();
+      if (loc != null && mounted) {
+        setState(() {
+          currentLocation = loc;
+        });
+      }
+
+      _locationSubscription = LocationService.getLocationStream().listen(
+        (loc) {
+          if (mounted) {
+            setState(() {
+              currentLocation = loc;
+            });
+          }
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
+  }
+
   Future<void> _loadGPXData() async {
     try {
-      // Load track points
-      final trackPoints = await GPXService.loadGPXTrack(
-        widget.route.gpxFileName,
-      );
+      final trackPoints =
+          await GPXService.loadGPXTrack(widget.route.gpxFileName);
 
-      // Load waypoints
-      final waypointsList = await GPXService.loadGPXWaypoints(
-        widget.route.gpxFileName,
-      );
+      final waypointsList =
+          await GPXService.loadGPXWaypoints(widget.route.gpxFileName);
 
       if (mounted) {
-        // Calculate bounds from route for later caching
         if (trackPoints.isNotEmpty) {
-          final routeBoundingBox = BoundingBoxCalculator.calculateBoundingBox(
-            trackPoints,
-          );
+          final routeBoundingBox =
+              BoundingBoxCalculator.calculateBoundingBox(trackPoints);
           routeBounds = routeBoundingBox;
         }
 
@@ -70,7 +89,6 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           isLoading = false;
         });
 
-        // Fit camera after loading data
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _fitCameraToRoute();
         });
@@ -85,7 +103,6 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     }
   }
 
-  /// Fit camera to show entire route with padding
   void _fitCameraToRoute() {
     if (routePoints.isEmpty) return;
 
@@ -99,7 +116,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
   @override
   void dispose() {
-    mapController.dispose();
+    _locationSubscription?.cancel();
     super.dispose();
   }
 
@@ -121,184 +138,240 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(errorMessage!),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        isLoading = true;
-                        errorMessage = null;
-                      });
-                      _loadGPXData();
-                    },
-                    child: const Text('Coba Lagi'),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 48, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(errorMessage!),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
+                          _loadGPXData();
+                        },
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )
-          : Stack(
-              children: [
-                FlutterMap(
-                  mapController: mapController,
-                  options: const MapOptions(
-                    initialCenter: LatLng(0, 0),
-                    initialZoom: 13,
-                  ),
+                )
+              : Stack(
                   children: [
-                    // OpenStreetMap tile layer (online only)
-                    TileLayer(
-                      urlTemplate: TileConfig.openStreetMapUrl,
-                      userAgentPackageName: TileConfig.userAgent,
+                    FlutterMap(
+                      mapController: mapController,
+                      options: const MapOptions(
+                        initialCenter: LatLng(0, 0),
+                        initialZoom: 13,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: TileConfig.openStreetMapUrl,
+                          userAgentPackageName: TileConfig.userAgent,
+                        ),
+
+                        if (routePoints.isNotEmpty)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: routePoints,
+                                strokeWidth: 4,
+                                color: Colors.red,
+                              ),
+                            ],
+                          ),
+
+                        if (waypoints.isNotEmpty)
+                          MarkerLayer(
+                            markers: [
+                              for (final waypoint in waypoints.entries)
+                                Marker(
+                                  point: waypoint.value,
+                                  width: 80,
+                                  height: 80,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.blue,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black26,
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.location_on,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black87,
+                                          borderRadius:
+                                              BorderRadius.circular(3),
+                                        ),
+                                        child: Text(
+                                          waypoint.key,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                        if (currentLocation != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: currentLocation!,
+                                width: 22,
+                                height: 22,
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.blue,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.my_location,
+                                    color: Colors.white,
+                                    size: 2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
 
-                    // Route polyline layer
-                    if (routePoints.isNotEmpty)
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: routePoints,
-                            strokeWidth: 4,
-                            color: Colors.red,
-                          ),
-                        ],
-                      ),
-
-                    // Waypoints marker layer
-                    if (waypoints.isNotEmpty)
-                      MarkerLayer(
-                        markers: [
-                          for (final waypoint in waypoints.entries)
-                            Marker(
-                              point: waypoint.value,
-                              width: 80,
-                              height: 80,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.blue,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.location_on,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
-                                    child: Text(
-                                      waypoint.key,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                    Positioned(
+                      bottom: 20,
+                      left: 20,
+                      right: 20,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.route.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
                               ),
                             ),
-                        ],
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.monitor_weight,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Berat: ${widget.bodyWeight.toStringAsFixed(0)} kg + ${widget.bagWeight.toStringAsFixed(0)} kg tas',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.straighten,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Jarak: ${widget.route.distance.toStringAsFixed(1)} km',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+
+                    // Tombol lokasi — sekarang di Stack utama
+                    Positioned(
+                      right: 20,
+                      bottom: 140,
+                      child: FloatingActionButton(
+                        heroTag: 'loc_main_btn',
+                        backgroundColor: Colors.green,
+                        onPressed: () {
+                          if (currentLocation != null) {
+                            mapController.move(currentLocation!, 17);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Icon(Icons.my_location),
+                      ),
+                    ),
                   ],
                 ),
-
-                // Info card at bottom
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.route.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.monitor_weight,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Berat: ${widget.bodyWeight.toStringAsFixed(0)} kg + ${widget.bagWeight.toStringAsFixed(0)} kg tas',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.straighten,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Jarak: ${widget.route.distance.toStringAsFixed(1)} km',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }
