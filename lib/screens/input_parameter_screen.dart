@@ -55,7 +55,7 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Info Card
+              // Info Card jalur yang dipilih
               Container(
                 decoration: BoxDecoration(
                   color: Colors.green[50],
@@ -109,10 +109,16 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                 child: TextField(
                   controller: _bodyWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Contoh: 70',
                     border: InputBorder.none,
-                    prefixIcon: Icon(Icons.monitor_weight, size: 20),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    prefixIcon: const Icon(Icons.monitor_weight, size: 20),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
                   ),
                 ),
               ),
@@ -140,10 +146,16 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                 child: TextField(
                   controller: _bagWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Contoh: 15',
                     border: InputBorder.none,
-                    prefixIcon: Icon(Icons.backpack, size: 20),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    prefixIcon: const Icon(Icons.backpack, size: 20),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
                   ),
                 ),
               ),
