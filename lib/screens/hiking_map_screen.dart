@@ -114,6 +114,31 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     );
   }
 
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Akhiri Pendakian'),
+          content: const Text('Aapakah anda ingin mengakhiri pendakian?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tidak'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Go back to previous screen
+              },
+              child: const Text('Ya'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _locationSubscription?.cancel();
@@ -132,7 +157,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _showExitConfirmation,
         ),
       ),
       body: isLoading
