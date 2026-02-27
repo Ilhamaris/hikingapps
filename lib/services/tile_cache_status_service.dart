@@ -7,28 +7,28 @@ class TileCacheStatusService {
 
   /// Menyimpan status cache untuk jalur pendakian tertentu
   /// 
-  /// Menggunakan nama file GPX sebagai identifier unik untuk jalur
+  /// Menggunakan string identifier (misalnya id rute) sebagai kunci unik
   /// Status disimpan di SharedPreferences untuk persistent storage
-  static Future<void> setCacheDownloaded(String gpxFileName) async {
+  static Future<void> setCacheDownloaded(String routeIdentifier) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('$_cachePrefix$gpxFileName', true);
+    await prefs.setBool('$_cachePrefix$routeIdentifier', true);
   }
 
   /// Mengecek apakah tile sudah diunduh untuk jalur tertentu
   /// 
   /// Mengembalikan true jika tile sudah pernah diunduh,
   /// false jika belum diunduh atau data tidak ditemukan
-  static Future<bool> isCacheDownloaded(String gpxFileName) async {
+  static Future<bool> isCacheDownloaded(String routeIdentifier) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('$_cachePrefix$gpxFileName') ?? false;
+    return prefs.getBool('$_cachePrefix$routeIdentifier') ?? false;
   }
 
   /// Menghapus status cache untuk jalur tertentu
   /// 
   /// Berguna jika ingin memaksa re-download tile untuk jalur
-  static Future<void> clearCacheStatus(String gpxFileName) async {
+  static Future<void> clearCacheStatus(String routeIdentifier) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('$_cachePrefix$gpxFileName');
+    await prefs.remove('$_cachePrefix$routeIdentifier');
   }
 
   /// Menghapus semua status cache

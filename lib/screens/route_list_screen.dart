@@ -16,17 +16,15 @@ class RouteListScreen extends StatelessWidget {
     // Data dummy untuk daftar jalur pendakian (data simulasi)
     final routes = [
       HikingRoute(
-        id: '1',
-        name: 'Jalur Suwanting',
-        distance: 6.5,
-        gpxFileName: 'Mount_Merbabu_via_Suwanting.gpx',
-        waypoints: ['Pos 1 Suwanting', 'Pos 2 Suwanting', 'Puncak'],
+        id: 'route_glonggong_mlaten',
+        name: 'Glonggong – Mlaten',
+        distance: 6.5, // placeholder, actual distance unused here
+        waypoints: ['Basecamp', 'Pos 1', 'Pos 2', 'Puncak'],
       ),
       HikingRoute(
         id: '2',
         name: 'Jalur Wekas',
         distance: 8.2,
-        gpxFileName: 'Mount_Merbabu_via_Suwanting.gpx',
         waypoints: ['Pos 1', 'Pos 2', 'Pos 3', 'Puncak'],
       ),
     ];

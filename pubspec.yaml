@@ -11,8 +11,6 @@ dependencies:
     sdk: flutter
   flutter_map: ^6.0.0
   latlong2: ^0.9.1
-  gpx: ^2.2.0
-  xml: ^6.5.0
   geolocator: ^11.0.0
   permission_handler: ^11.3.0
   shared_preferences: ^2.2.0
@@ -27,10 +25,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/gpx/
     - assets/tiles/
     - assets/images/splashscreen.png
     - assets/images/icon.png
+    - assets/routes/
 
 flutter_native_splash:
   background_image: assets/images/splashscreen.png

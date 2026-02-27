@@ -6,8 +6,6 @@ class HikingRoute {
   final String name;
   // Jarak tempuh rute dalam kilometer
   final double distance;
-  // Nama file GPX yang berisi data geografis rute
-  final String gpxFileName;
   // Daftar titik waypoint yang dilalui dalam rute
   final List<String> waypoints;
 
@@ -16,7 +14,6 @@ class HikingRoute {
     required this.id,
     required this.name,
     required this.distance,
-    required this.gpxFileName,
     required this.waypoints,
   });
 }

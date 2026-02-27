@@ -1,30 +1,27 @@
-Fix the following Flutter error:
+---
 
-1. I'm using Flutter + flutter_map (latest version).
-2. I have a FloatingActionButton (FAB) placed on top of the FlutterMap using Stack + Positioned.
-3. When the "Find My Location" FAB is pressed, the button doesn't respond at all.
-4. Another issue: when the FAB is pressed, the map pans, and when the button is double-taped, the map zooms in, as if the FAB isn't receiving pointer input.
-5. I want the FAB to function normally:
+**PROMPT**
 
-* Executing the code `mapController.move(currentLocation, 17);`
-* Not triggering the map gesture
-* Not causing the map to drag/zoom
-* Not being hit by MapWidget`s hit test
+I want to change the bottom card display to a *draggable bottom sheet* like the following example: a bottom panel that can be slid up and down, has a handle (gray line), and its contents can be scrolled.
+The final result should resemble the reference screenshot: the panel sticks to the bottom, can be dragged, and when fully expanded displays a list of estimated post times.
 
-Please do the following:
+Technical instructions:
 
-Step 1: Analyze the most likely causes why the button isn't receiving clicks (e.g., gesture conflict, pointer event capture by MapWidget, Stack clipBehavior issue, or need to use `IgnorePointer`/`AbsorbPointer`).
+1. Use `DraggableScrollableSheet` *or* `showModalBottomSheet` with `isScrollControlled: true`.
+2. The panel should have a rounded top and a handle at the top.
+3. The panel should contain a ListView containing post items (Pos 1, Post 2, etc.).
+4. The default minChildSize is around 0.20, maxChildSize around 0.85.
+5. Make sure the panel stays on top of the map without disrupting the map layout.
+6. Don't change the map logic; simply replace the static cards with a draggable bottom sheet.
+7. Provide the final output in the form of Flutter code that can be directly installed to replace the old cards.
 
-Step 2: Provide a code solution that *certainly works*, for example:
+The output must include:
 
-* ensuring the FAB is outside the map's area capturing gestures,
-* or wrapping the FlutterMap with `IgnorePointer`,
-* or wrapping the FAB with `GestureDetector(behavior: HitTestBehavior.opaque)` so that clicks don't "bleed through" the map,
-* or adding `mapController.onReady` and ensuring the map doesn't override pointer events.
+* `DraggableScrollableSheet` structure
+* Panel decorations (rounded, shadow, handle)
+* ListView post content
+* Example integration in `Stack` to appear above the map
 
-Step 3: Provide a complete, ready-to-paste code patch that correctly places the FAB above the FlutterMap so that:
+Do not use PageView because this is not a horizontal slider, but a vertical draggable bottom sheet.
 
-* the FAB has pointer priority,
-* the FAB is clickable,
-* the map doesn't react.
 ---
