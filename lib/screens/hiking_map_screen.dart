@@ -4,7 +4,9 @@ import 'package:latlong2/latlong.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../models/route_point.dart';
+import '../models/segment_result.dart';
 import '../services/route_loader.dart';
+import '../services/inference_service.dart';
 import '../config/tile_config.dart';
 import '../services/location_service.dart';
 import 'dart:async';
@@ -36,6 +38,12 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   List<RoutePoint> _routePoints = [];
   bool isLoading = true;
 
+  // inference service and results
+  late InferenceService _inferenceService;
+  bool _isInferenceInitialized = false;
+  bool _isEstimating = false;
+  List<SegmentResult> _segmentResults = [];
+
   final GlobalKey _sheetKey = GlobalKey();
   final ValueNotifier<double> _sheetHeight = ValueNotifier(0);
 
@@ -44,6 +52,11 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     super.initState();
     mapController = MapController();
     _initLocation();
+
+    // prepare inference service
+    _inferenceService = InferenceService();
+    _initializeInference();
+
     _loadRoute();
   }
 
@@ -102,6 +115,57 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     );
   }
 
+  Future<void> _initializeInference() async {
+    try {
+      await _inferenceService.initialize();
+      setState(() {
+        _isInferenceInitialized = true;
+      });
+      // try to compute if route already loaded
+      _attemptEstimation();
+    } catch (e) {
+      debugPrint('Inference init failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Inference init error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _attemptEstimation() async {
+    if (!_isInferenceInitialized || _routePoints.isEmpty) return;
+    if (_isEstimating) return;
+    _isEstimating = true;
+
+    try {
+      // convert route points to raw segment maps
+      final rawSegments = _routePoints.map((p) {
+        return {
+          'delta_dist_m': p.deltaDist,
+          'delta_elev_m': p.deltaElev,
+          'slope_deg': p.slopeDeg,
+        };
+      }).toList();
+
+      final results = _inferenceService.processSegments(rawSegments);
+      if (mounted) {
+        setState(() {
+          _segmentResults = results;
+        });
+      }
+    } catch (e) {
+      debugPrint('Estimation processing failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Estimation error: $e')),
+        );
+      }
+    } finally {
+      _isEstimating = false;
+    }
+  }
+
   Future<void> _loadRoute() async {
     String path = 'assets/routes/${widget.route.id}.json';
     List<RoutePoint> pts = [];
@@ -137,6 +201,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         _routePoints = pts;
       });
       _fitToRoute();
+      _attemptEstimation();
     }
   }
 
@@ -155,6 +220,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   void dispose() {
     _locationSubscription?.cancel();
     _sheetHeight.dispose();
+    _inferenceService.dispose();
     super.dispose();
   }
 
@@ -287,10 +353,13 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                             _sheetHeight.value = renderBox.size.height;
                           }
                         });
-                        final posts = _routePoints
-                            .where((p) => p.name != null)
-                            .toList();
-                        return Container(
+                        // keep original index so we can map back to segment results
+                    final postsWithIndex = _routePoints
+                        .asMap()
+                        .entries
+                        .where((e) => e.value.name != null)
+                        .toList();
+                    return Container(
                           key: _sheetKey,
                           decoration: const BoxDecoration(
                             color: Colors.white,
@@ -323,24 +392,41 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                               Expanded(
                                 child: ListView.builder(
                                   controller: scrollController,
-                                  itemCount: posts.length,
+                                  itemCount: postsWithIndex.length,
                                   itemBuilder: (context, index) {
-                                    final p = posts[index];
-                                    final estimatedTime = posts.isNotEmpty
-                                        ? ((index + 1) *
-                                                  widget.route.distance /
-                                                  posts.length /
-                                                  3 *
-                                                  60)
-                                              .round()
-                                        : 0;
+                                    final entry = postsWithIndex[index];
+                                    final p = entry.value;
+                                    final originalIdx = entry.key;
+                                    int estimatedTime = 0;
+                                    if (_segmentResults.isNotEmpty &&
+                                        originalIdx < _segmentResults.length) {
+                                      estimatedTime = (_segmentResults[originalIdx]
+                                          .cumulative / 60)
+                                          .round();
+                                    }
+
                                     return ListTile(
                                       title: Text(
                                         'Pos ${index + 1}: ${p.name ?? 'Post ${index + 1}'}',
                                       ),
-                                      subtitle: Text(
-                                        'Estimated time: $estimatedTime min',
-                                      ),
+                                      subtitle: _isEstimating
+                                          ? Row(
+                                              children: const [
+                                                SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    strokeCap: StrokeCap.round,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text('Estimating...'),
+                                              ],
+                                            )
+                                          : Text(
+                                              'Estimated time: $estimatedTime min',
+                                            ),
                                     );
                                   },
                                 ),

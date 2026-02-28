@@ -6,6 +6,7 @@ import 'screens/input_parameter_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
 import 'screens/hiking_map_screen.dart';
+import 'screens/estimation_screen.dart';
 import 'models/mountain.dart';
 import 'models/hiking_route.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -65,6 +66,7 @@ class MyApp extends StatelessWidget {
         '/input-parameter': (context) => const InputParameterScreen(),
         '/history': (context) => const HistoryScreen(),
         '/history-detail': (context) => const HistoryDetailScreen(),
+        '/estimation': (context) => const EstimationScreen(),
         '/hiking-map': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as Map?;
           final mountain = args?['mountain'] as Mountain?;

@@ -16,6 +16,7 @@ dependencies:
   shared_preferences: ^2.2.0
   flutter_native_splash: ^2.4.0
   flutter_launcher_icons: ^0.13.1
+  tflite_flutter: ^0.10.4
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +30,8 @@ flutter:
     - assets/images/splashscreen.png
     - assets/images/icon.png
     - assets/routes/
+    - assets/models/
+    - assets/models/linear_regression.tflite
 
 flutter_native_splash:
   background_image: assets/images/splashscreen.png
