@@ -389,47 +389,192 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
-                              Expanded(
-                                child: ListView.builder(
-                                  controller: scrollController,
-                                  itemCount: postsWithIndex.length,
-                                  itemBuilder: (context, index) {
-                                    final entry = postsWithIndex[index];
-                                    final p = entry.value;
-                                    final originalIdx = entry.key;
-                                    int estimatedTime = 0;
-                                    if (_segmentResults.isNotEmpty &&
-                                        originalIdx < _segmentResults.length) {
-                                      estimatedTime = (_segmentResults[originalIdx]
-                                          .cumulative / 60)
-                                          .round();
-                                    }
-
-                                    return ListTile(
-                                      title: Text(
-                                        'Pos ${index + 1}: ${p.name ?? 'Post ${index + 1}'}',
-                                      ),
-                                      subtitle: _isEstimating
-                                          ? Row(
-                                              children: const [
-                                                SizedBox(
-                                                  width: 16,
-                                                  height: 16,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    strokeCap: StrokeCap.round,
-                                                  ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text('Estimating...'),
-                                              ],
-                                            )
-                                          : Text(
-                                              'Estimated time: $estimatedTime min',
-                                            ),
-                                    );
-                                  },
+                              // Header + card-style list
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
                                 ),
+                                child: Row(
+                                  children: const [
+                                    Icon(
+                                      Icons.timer_outlined,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Estimasi Waktu ke Pos',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Builder(builder: (context) {
+                                  // build a typed display list that may include current location
+                                  final List<MapEntry<int, RoutePoint>?> displayItems = [];
+                                  if (currentLocation != null) {
+                                    displayItems.add(null); // null marks current location
+                                  }
+                                  for (var e in postsWithIndex) {
+                                    displayItems.add(e);
+                                  }
+
+                                  return ListView.separated(
+                                    controller: scrollController,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    itemCount: displayItems.length,
+                                    separatorBuilder: (_, _) => const SizedBox(
+                                      height: 12,
+                                    ),
+                                    itemBuilder: (context, idx) {
+                                      final item = displayItems[idx];
+                                      if (item == null) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.blue.shade100,
+                                            ),
+                                            boxShadow: const [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 4,
+                                                offset: Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ListTile(
+                                            leading: Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.my_location,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            title: const Text(
+                                              'Lokasi Sekarang',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            subtitle: _isEstimating
+                                                ? Row(
+                                                    children: const [
+                                                      SizedBox(
+                                                        width: 16,
+                                                        height: 16,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text('Estimating...'),
+                                                    ],
+                                                  )
+                                                : null,
+                                            trailing: const SizedBox.shrink(),
+                                          ),
+                                        );
+                                      }
+
+                                      final entry = item; // MapEntry<int, RoutePoint>
+                                      final p = entry.value;
+                                      final originalIdx = entry.key;
+                                      int estimatedTime = 0;
+                                      if (_segmentResults.isNotEmpty &&
+                                          originalIdx < _segmentResults.length) {
+                                        estimatedTime =
+                                            (_segmentResults[originalIdx]
+                                                        .cumulative /
+                                                    60)
+                                                .round();
+                                      }
+
+                                      return Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        elevation: 2,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 4),
+                                          child: ListTile(
+                                            contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            leading: Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade50,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                // match map marker icons: flag for last point, otherwise house
+                                                p == _routePoints.last
+                                                    ? Icons.flag
+                                                    : Icons.house_siding,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                            title: Text(
+                                              // show the actual post name if available, otherwise fall back to Pos number
+                                              p.name != null && p.name!.isNotEmpty
+                                                  ? p.name! // names were already filtered, but guard anyway
+                                                  : 'Pos ${currentLocation != null ? idx : idx + 1}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            subtitle: _isEstimating
+                                                ? Row(
+                                                    children: const [
+                                                      SizedBox(
+                                                        width: 16,
+                                                        height: 16,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text('Estimating...'),
+                                                    ],
+                                                  )
+                                                : null,
+                                            trailing: Text(
+                                              'Estimasi waktu: $estimatedTime menit',
+                                              style: const TextStyle(
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                            onTap: () {
+                                              // move map to selected post
+                                              mapController.move(
+                                                  LatLng(p.lat, p.lon), 17);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }),
                               ),
                             ],
                           ),
