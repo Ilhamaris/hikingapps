@@ -39,4 +39,17 @@ class RoutePoint {
       name: json["name"],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "lat": lat,
+      "lon": lon,
+      "elev": elev,
+      "delta_dist_m": deltaDist,
+      "delta_elev_m": deltaElev,
+      "slope_deg": slopeDeg,
+      "cum_dist_m": cumDist,
+      "name": name,
+    };
+  }
 }

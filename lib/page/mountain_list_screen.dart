@@ -1,44 +1,28 @@
 import 'package:flutter/material.dart';
 import '../models/mountain.dart';
+import '../services/mountain_loader.dart';
 import '../widgets/mountain_card.dart';
 
 // Layar untuk menampilkan daftar gunung yang tersedia untuk pendakian
-class MountainListScreen extends StatelessWidget {
+class MountainListScreen extends StatefulWidget {
   const MountainListScreen({super.key});
+
+  @override
+  State<MountainListScreen> createState() => _MountainListScreenState();
+}
+
+class _MountainListScreenState extends State<MountainListScreen> {
+  late Future<List<Mountain>> _mountainsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _mountainsFuture = MountainLoader.loadAllMountains();
+  }
 
   // Membangun tampilan daftar gunung
   @override
   Widget build(BuildContext context) {
-    // Data dummy untuk daftar gunung (data simulasi)
-    final mountains = [
-      Mountain(
-        id: '1',
-        name: 'Gunung Gede',
-        location: 'Jawa Barat',
-        elevation: 2958,
-        description:
-            'Gunung berapi yang terletak di Taman Nasional Gunung Gede Pangrango. Menawarkan pemandangan alam yang indah dengan beragam jalur pendakian.',
-        imagePath: 'assets/images/gede.jpg',
-      ),
-      Mountain(
-        id: '2',
-        name: 'Gunung Semeru',
-        location: 'Jawa Timur',
-        elevation: 3676,
-        description:
-            'Gunung tertinggi di Pulau Jawa dengan puncak Mahameru yang menantang. Jalur pendakian berpengalaman.',
-        imagePath: 'assets/images/semeru.jpg',
-      ),
-      Mountain(
-        id: '3',
-        name: 'Gunung Merbabu',
-        location: 'Jawa Tengah',
-        elevation: 3145,
-        description:
-            'Gunung dengan pemandangan savana luas dan jalur pendakian yang beragam. Cocok untuk berbagai tingkat pendaki.',
-        imagePath: 'assets/images/merbabu.jpg',
-      ),
-    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -56,45 +40,70 @@ class MountainListScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Cari nama gunung...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+      body: FutureBuilder<List<Mountain>>(
+        future: _mountainsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error loading mountains: ${snapshot.error}'),
+            );
+          }
+
+          final mountains = snapshot.data ?? [];
+
+          if (mountains.isEmpty) {
+            return const Center(
+              child: Text('No mountains found'),
+            );
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama gunung...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            ...mountains.map((mountain) {
-              return MountainCard(
-                mountain: mountain,
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/route-list',
-                    arguments: mountain,
+                ...mountains.map((mountain) {
+                  return MountainCard(
+                    mountain: mountain,
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/route-list',
+                        arguments: mountain,
+                      );
+                    },
                   );
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-        ),
+                }),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

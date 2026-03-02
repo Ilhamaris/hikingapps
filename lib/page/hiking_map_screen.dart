@@ -5,7 +5,7 @@ import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../models/route_point.dart';
 import '../models/segment_result.dart';
-import '../services/route_loader.dart';
+import '../services/mountain_loader.dart';
 import '../services/inference_service.dart';
 import '../config/tile_config.dart';
 import '../services/location_service.dart';
@@ -167,29 +167,31 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   }
 
   Future<void> _loadRoute() async {
-    String path = 'assets/routes/${widget.route.id}.json';
     List<RoutePoint> pts = [];
     try {
-      pts = await RouteLoader.loadRoute(path);
-      if (pts.isEmpty) {
-        debugPrint('route loader: $path contained no points');
+      // Load route using the new MountainLoader with proper path structure
+      final mountainRoute = await MountainLoader.loadRoute(
+        widget.mountain.id,
+        widget.route.id,
+      );
+      
+      if (mountainRoute != null && mountainRoute.points.isNotEmpty) {
+        pts = mountainRoute.points;
+        debugPrint('route loader: loaded ${pts.length} points from ${widget.mountain.id}/${widget.route.id}');
       } else {
-        debugPrint('route loader: loaded ${pts.length} points from $path');
+        debugPrint('route loader: ${widget.mountain.id}/${widget.route.id} contained no points');
       }
     } catch (e, st) {
-      debugPrint('failed to load route from $path: $e');
+      debugPrint('failed to load route ${widget.mountain.id}/${widget.route.id}: $e');
       debugPrint('$st');
-    }
-
-    // fallback to full route file if primary load failed or returned nothing
-    if (pts.isEmpty) {
-      const fallback = 'assets/routes/route_glonggong_mlaten.json';
+      
+      // fallback to default route
       try {
-        pts = await RouteLoader.loadRoute(fallback);
-        debugPrint(
-          'fallback loader: loaded ${pts.length} points from $fallback',
-        );
-        path = fallback;
+        final fallbackRoute = await MountainLoader.loadRoute('glonggong', 'route_glonggong_mlaten.json');
+        if (fallbackRoute != null) {
+          pts = fallbackRoute.points;
+          debugPrint('fallback loader: loaded ${pts.length} points from glonggong/route_glonggong_mlaten.json');
+        }
       } catch (e, st) {
         debugPrint('fallback load also failed: $e');
         debugPrint('$st');

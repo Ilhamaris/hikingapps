@@ -1,0 +1,16 @@
+{
+    "mountain_name": "Gunung Glonggong",
+    "elevation": 600,
+    "province": "Jawa Tengah",
+    "description": "Deskripsi asli gunung.",
+    "routes": [
+      {
+        "file": "route_glonggong_mlaten.json",
+        "name": "Glonggong - Mlaten"
+      },
+      {
+        "file": "route_glonggong_mlaten2.json",
+        "name": "Mlaten - Plumpung"
+      }
+    ]
+  }

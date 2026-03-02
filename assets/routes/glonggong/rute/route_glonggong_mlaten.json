@@ -1,4 +1,6 @@
-[
+{
+  "route_name": "Glonggong - Mlaten",
+  "points": [
     {
         "name":"Basecamp",
         "lat":-7.548214,
@@ -4856,3 +4858,6 @@
         "slope_deg":5.081764183
     }
 ]
+}
+
+

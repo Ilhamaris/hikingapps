@@ -30,6 +30,12 @@ flutter:
     - assets/images/splashscreen.png
     - assets/images/icon.png
     - assets/routes/
+
+    - assets/routes/glonggong/metadata.json
+    - assets/routes/glonggong/rute/route_glonggong_mlaten.json
+    - assets/routes/glonggong/rute/route_glonggong_mlaten2.json
+    
+    - assets/routes/mongkrang/metadata.json
     - assets/models/
     - assets/models/linear_regression.tflite
 
