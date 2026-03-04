@@ -28,10 +28,19 @@ class MountainRoute {
     };
   }
 
-  // Calculate total distance of the route
+  // Calculate total distance of the route (in meters)
+  // JSON files don't always include `cum_dist_m`, so fall back to
+  // summing the individual `deltaDist` values which correspond to the
+  // `delta_dist_m` field in the raw data.
   double getTotalDistance() {
     if (points.isEmpty) return 0.0;
-    return points.last.cumDist;
+    // prefer last cumulative distance if it's been populated
+    final lastCum = points.last.cumDist;
+    if (lastCum > 0) {
+      return lastCum;
+    }
+    // otherwise compute from deltas
+    return points.fold(0.0, (sum, p) => sum + p.deltaDist);
   }
 
   // Get waypoint names from route

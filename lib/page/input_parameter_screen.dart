@@ -62,7 +62,8 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.green[200]!),
                 ),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 10),
+                width: double.infinity,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -85,10 +86,10 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
               // Body Weight Input
               const Text(
-                'Jalur yang dipilih:',
+                'Berat Badan (kg):',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -122,7 +123,7 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               // Bag Weight Input
               const Text(
                 'Berat Tas (kg)',

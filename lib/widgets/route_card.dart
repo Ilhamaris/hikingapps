@@ -52,7 +52,7 @@ class RouteCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${route.distance} km', // Menampilkan jarak rute
+                        '${route.distance.toStringAsFixed(2)} km', // distance from route data
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],

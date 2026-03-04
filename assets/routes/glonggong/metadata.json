@@ -1,8 +1,8 @@
 {
     "mountain_name": "Gunung Glonggong",
     "elevation": 600,
-    "province": "Jawa Tengah",
-    "description": "Deskripsi asli gunung.",
+    "province": "Jawa Timur",
+    "description": "Data Jalur Uji Coba",
     "routes": [
       {
         "file": "route_glonggong_mlaten.json",
