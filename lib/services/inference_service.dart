@@ -17,18 +17,24 @@ class InferenceService {
   final TFLiteService _tfliteService = TFLiteService();
 
   /// Preprocess a single segment data
-  /// Extracts and scales the 3 required features in order:
-  /// 1. delta_dist_m
-  /// 2. delta_elev_m
-  /// 3. slope_deg
-  List<double> preprocessSegment(Map<String, dynamic> segmentData) {
+  /// Extracts and scales the 5 required features in order:
+  /// 1. body_weight
+  /// 2. load_weight
+  /// 3. delta_dist_m
+  /// 4. delta_elev_m
+  /// 5. slope_deg
+  List<double> preprocessSegment(
+    Map<String, dynamic> segmentData,
+    double bodyWeight,
+    double loadWeight,
+  ) {
     try {
-      // Extract the 3 features in the mandatory order
+      // Extract the 5 features in the mandatory order
       final deltaDistM = (segmentData['delta_dist_m'] as num).toDouble();
       final deltaElevM = (segmentData['delta_elev_m'] as num).toDouble();
       final slopeDeg = (segmentData['slope_deg'] as num).toDouble();
 
-      final rawFeatures = [deltaDistM, deltaElevM, slopeDeg];
+      final rawFeatures = [bodyWeight, loadWeight, deltaDistM, deltaElevM, slopeDeg];
 
       // Scale the features
       final scaledFeatures = _scalerService.scaleFeatures(rawFeatures);
@@ -45,13 +51,20 @@ class InferenceService {
   }
 
   /// Process multiple segments with cumulative calculation
+  /// Requires: bodyWeight and loadWeight from user input
   /// Returns list of SegmentResult with predictions and cumulative sum
-  List<SegmentResult> processSegments(List<Map<String, dynamic>> rawSegments) {
+  List<SegmentResult> processSegments(
+    List<Map<String, dynamic>> rawSegments,
+    double bodyWeight,
+    double loadWeight,
+  ) {
     try {
       debugPrint('╔══════════════════════════════════════════════════════════╗');
       debugPrint('║       Starting Batch Segment Processing                  ║');
       debugPrint('╚══════════════════════════════════════════════════════════╝');
-      debugPrint('📊 Processing ${rawSegments.length} segments...\n');
+      debugPrint('📊 Processing ${rawSegments.length} segments...');
+      debugPrint('   - Body Weight: $bodyWeight kg');
+      debugPrint('   - Load Weight: $loadWeight kg\n');
 
       final results = <SegmentResult>[];
       double cumulativeSum = 0.0;
@@ -63,7 +76,7 @@ class InferenceService {
         debugPrint('🔄 Processing Segment ${i + 1}/${rawSegments.length}');
 
         // Preprocess the segment
-        final scaledFeatures = preprocessSegment(segment);
+        final scaledFeatures = preprocessSegment(segment, bodyWeight, loadWeight);
 
         // Run inference
         final prediction = _tfliteService.runInference(scaledFeatures);

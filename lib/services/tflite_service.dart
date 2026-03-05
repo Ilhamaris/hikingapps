@@ -73,15 +73,15 @@ class TFLiteService {
   bool isInitialized() => _isInitialized;
 
   /// Run inference on input data
-  /// Input: List of 3 scaled features [delta_dist_m, delta_elev_m, slope_deg]
+  /// Input: List of 5 scaled features [body_weight, load_weight, delta_dist_m, delta_elev_m, slope_deg]
   /// Returns: Predicted value as double
   double runInference(List<double> input) {
     if (!_isInitialized || _interpreter == null) {
       throw Exception('Model not initialized. Call loadModel() first.');
     }
 
-    if (input.length != 3) {
-      throw Exception('Input must contain exactly 3 features, got ${input.length}');
+    if (input.length != 5) {
+      throw Exception('Input must contain exactly 5 features, got ${input.length}');
     }
 
     try {

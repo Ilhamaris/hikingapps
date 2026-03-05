@@ -148,7 +148,11 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         };
       }).toList();
 
-      final results = _inferenceService.processSegments(rawSegments);
+      final results = _inferenceService.processSegments(
+        rawSegments,
+        widget.bodyWeight,
+        widget.bagWeight,
+      );
       if (mounted) {
         setState(() {
           _segmentResults = results;

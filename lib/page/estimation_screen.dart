@@ -99,8 +99,16 @@ class _EstimationScreenState extends State<EstimationScreen> {
         },
       ];
 
+      // Test values for body weight and load weight
+      const double bodyWeight = 70.0; // kg
+      const double loadWeight = 15.0; // kg
+
       // Process segments
-      final results = _inferenceService.processSegments(testSegments);
+      final results = _inferenceService.processSegments(
+        testSegments,
+        bodyWeight,
+        loadWeight,
+      );
 
       setState(() {
         _results = results;
