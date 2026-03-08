@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../models/route_point.dart';
 import '../models/segment_result.dart';
+import '../models/hiking_history.dart';
 import '../services/mountain_loader.dart';
 import '../services/inference_service.dart';
 import '../config/tile_config.dart';
 import '../services/location_service.dart';
+import '../services/history_service.dart';
 import 'dart:async';
 
 class HikingMapScreen extends StatefulWidget {
@@ -103,9 +106,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
               child: const Text('Tidak'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Go back to previous screen
+                await _saveClimbingHistory();
               },
               child: const Text('Ya'),
             ),
@@ -220,6 +223,132 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(32)),
       );
     });
+  }
+
+  Future<void> _saveClimbingHistory() async {
+    try {
+      // Generate a unique ID for this history record
+      const uuid = Uuid();
+      final historyId = uuid.v4();
+
+      // Create RouteSegment list from route points and segment results
+      final segments = <RouteSegment>[];
+      final postsWithIndex = _routePoints
+          .asMap()
+          .entries
+          .where((e) => e.value.name != null && e.value.name!.isNotEmpty)
+          .toList();
+
+      // Add segments between consecutive waypoints (posts)
+      for (int i = 0; i < postsWithIndex.length - 1; i++) {
+        final fromIdx = postsWithIndex[i].key;
+        final toIdx = postsWithIndex[i + 1].key;
+        final fromPoint = postsWithIndex[i].value;
+        final toPoint = postsWithIndex[i + 1].value;
+
+        // Calculate segment time: time to reach toIdx - time to reach fromIdx
+        int segmentMinutes = 0;
+        if (_segmentResults.isNotEmpty &&
+            fromIdx < _segmentResults.length &&
+            toIdx < _segmentResults.length) {
+          final fromTime = (_segmentResults[fromIdx].cumulative / 60).round();
+          final toTime = (_segmentResults[toIdx].cumulative / 60).round();
+          segmentMinutes = toTime - fromTime;
+        }
+
+        segments.add(
+          RouteSegment(
+            from: fromPoint.name ?? 'Pos $i',
+            to: toPoint.name ?? 'Pos ${i + 1}',
+            estimatedTime: Duration(minutes: segmentMinutes),
+          ),
+        );
+      }
+
+      // Add final segment to summit if there are route points and last post is not the summit
+      if (postsWithIndex.isNotEmpty && _routePoints.isNotEmpty) {
+        final lastPostEntry = postsWithIndex.last;
+        final lastPostIdx = lastPostEntry.key;
+        final lastPoint = lastPostEntry.value;
+        final summitPoint = _routePoints.last;
+        final summitIdx = _routePoints.length - 1;
+
+        // Only add final segment if the last post is not already the summit
+        if (lastPostIdx != summitIdx) {
+          int finalSegmentMinutes = 0;
+          if (_segmentResults.isNotEmpty && lastPostIdx < _segmentResults.length) {
+            if (summitIdx < _segmentResults.length) {
+              final postTime =
+                  (_segmentResults[lastPostIdx].cumulative / 60).round();
+              final summitTime =
+                  (_segmentResults[summitIdx].cumulative / 60).round();
+              finalSegmentMinutes = summitTime - postTime;
+            }
+          }
+
+          segments.add(
+            RouteSegment(
+              from: lastPoint.name ?? 'Pos ${postsWithIndex.length - 1}',
+              to: summitPoint.name ?? 'Puncak',
+              estimatedTime: Duration(minutes: finalSegmentMinutes),
+            ),
+          );
+        }
+      }
+
+      // Calculate total estimated time
+      Duration totalEstimatedTime = Duration.zero;
+      if (_segmentResults.isNotEmpty) {
+        final totalMinutes = (_segmentResults.last.cumulative / 60).round();
+        totalEstimatedTime = Duration(minutes: totalMinutes);
+      }
+
+      // Create HikingHistory object
+      final history = HikingHistory(
+        id: historyId,
+        mountainName: widget.mountain.name,
+        routeName: widget.route.name,
+        date: DateTime.now(),
+        estimatedTime: totalEstimatedTime,
+        bodyWeight: widget.bodyWeight,
+        bagWeight: widget.bagWeight,
+        segments: segments,
+      );
+
+      // Save to storage
+      final historyService = HistoryService();
+      final success = await historyService.saveHistory(history);
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Riwayat pendakian berhasil disimpan!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Navigate to history page after saving
+        Navigator.pushNamedAndRemoveUntil(context, '/history', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menyimpan riwayat pendakian'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error saving climbing history: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 // Kelas untuk merepresentasikan riwayat pendakian yang telah dilakukan
 class HikingHistory {
   final String id;
@@ -19,6 +21,39 @@ class HikingHistory {
     required this.bagWeight,
     required this.segments,
   });
+
+  // Convert HikingHistory to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'mountainName': mountainName,
+      'routeName': routeName,
+      'date': date.toIso8601String(),
+      'estimatedTime': estimatedTime.inMinutes,
+      'bodyWeight': bodyWeight,
+      'bagWeight': bagWeight,
+      'segments': segments.map((segment) => segment.toJson()).toList(),
+    };
+  }
+
+  // Create HikingHistory from JSON
+  factory HikingHistory.fromJson(Map<String, dynamic> json) {
+    return HikingHistory(
+      id: json['id'] ?? '',
+      mountainName: json['mountainName'] ?? '',
+      routeName: json['routeName'] ?? '',
+      date: DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
+      estimatedTime: Duration(minutes: json['estimatedTime'] ?? 0),
+      bodyWeight: (json['bodyWeight'] ?? 0.0).toDouble(),
+      bagWeight: (json['bagWeight'] ?? 0.0).toDouble(),
+      segments: (json['segments'] as List?)
+          ?.map((segment) => RouteSegment.fromJson(segment))
+          .toList() ?? [],
+    );
+  }
+
+  // Convert to JSON string
+  String toJsonString() => jsonEncode(toJson());
 }
 
 class RouteSegment {
@@ -31,4 +66,22 @@ class RouteSegment {
     required this.to,
     required this.estimatedTime,
   });
+
+  // Convert RouteSegment to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'from': from,
+      'to': to,
+      'estimated_minutes': estimatedTime.inMinutes,
+    };
+  }
+
+  // Create RouteSegment from JSON
+  factory RouteSegment.fromJson(Map<String, dynamic> json) {
+    return RouteSegment(
+      from: json['from'] ?? '',
+      to: json['to'] ?? '',
+      estimatedTime: Duration(minutes: json['estimated_minutes'] ?? 0),
+    );
+  }
 }

@@ -103,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              Icons.info_outline,
+                              Icons.hiking,
                               color: Colors.green,
                               size: 24,
                             ),
@@ -114,7 +114,7 @@ class HomeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Informasi Jalur Pendakian',
+                                  'Mulai Pendakian',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
