@@ -3,8 +3,11 @@ import '../models/segment_result.dart';
 import 'scaler_service.dart';
 import 'tflite_service.dart';
 
-/// Service for preprocessing segment data and running batch inference
+// Layanan utama untuk memproses data segmen jalur dan menjalankan
+// inferensi menggunakan model machine learning. Menggabungkan
+// preprocessing (scaling) dan prediksi waktu pendakian.
 class InferenceService {
+  // Singleton pattern: hanya satu instance yang digunakan di seluruh app.
   static final InferenceService _instance = InferenceService._internal();
 
   InferenceService._internal();
@@ -13,30 +16,30 @@ class InferenceService {
     return _instance;
   }
 
+  // Layanan untuk menormalisasi fitur input.
   final ScalerService _scalerService = ScalerService();
+  // Layanan untuk menjalankan model TensorFlow Lite.
   final TFLiteService _tfliteService = TFLiteService();
 
-  /// Preprocess a single segment data
-  /// Extracts and scales the 5 required features in order:
-  /// 1. body_weight
-  /// 2. load_weight
-  /// 3. delta_dist_m
-  /// 4. delta_elev_m
-  /// 5. slope_deg
+  /// Memproses satu segmen data menjadi fitur yang sudah dinormalisasi.
+  /// Mengambil 5 fitur wajib dalam urutan tertentu:
+  /// 1. berat badan, 2. berat beban, 3. jarak delta (m), 4. elevasi delta (m), 5. kemiringan (derajat).
+  /// Mengembalikan daftar fitur yang sudah diskalakan.
   List<double> preprocessSegment(
     Map<String, dynamic> segmentData,
     double bodyWeight,
     double loadWeight,
   ) {
     try {
-      // Extract the 5 features in the mandatory order
+      // Ekstrak fitur dari data segmen.
       final deltaDistM = (segmentData['delta_dist_m'] as num).toDouble();
       final deltaElevM = (segmentData['delta_elev_m'] as num).toDouble();
       final slopeDeg = (segmentData['slope_deg'] as num).toDouble();
 
+      // Gabungkan semua fitur dalam urutan yang benar.
       final rawFeatures = [bodyWeight, loadWeight, deltaDistM, deltaElevM, slopeDeg];
 
-      // Scale the features
+      // Normalisasi fitur menggunakan scaler.
       final scaledFeatures = _scalerService.scaleFeatures(rawFeatures);
 
       debugPrint('📐 Preprocessed Segment:');
@@ -46,13 +49,13 @@ class InferenceService {
       return scaledFeatures;
     } catch (e) {
       debugPrint('❌ Preprocessing error: $e');
-      rethrow;
+      rethrow; // Lempar ulang error agar ditangani di atas.
     }
   }
 
-  /// Process multiple segments with cumulative calculation
-  /// Requires: bodyWeight and loadWeight from user input
-  /// Returns list of SegmentResult with predictions and cumulative sum
+  /// Memproses beberapa segmen sekaligus dengan perhitungan kumulatif.
+  /// Membutuhkan berat badan dan beban dari input pengguna.
+  /// Mengembalikan daftar hasil segmen dengan prediksi dan total kumulatif.
   List<SegmentResult> processSegments(
     List<Map<String, dynamic>> rawSegments,
     double bodyWeight,
@@ -67,7 +70,7 @@ class InferenceService {
       debugPrint('   - Load Weight: $loadWeight kg\n');
 
       final results = <SegmentResult>[];
-      double cumulativeSum = 0.0;
+      double cumulativeSum = 0.0; // Total waktu kumulatif.
 
       for (int i = 0; i < rawSegments.length; i++) {
         final segment = rawSegments[i];
@@ -75,16 +78,16 @@ class InferenceService {
         debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         debugPrint('🔄 Processing Segment ${i + 1}/${rawSegments.length}');
 
-        // Preprocess the segment
+        // Preproses segmen ini.
         final scaledFeatures = preprocessSegment(segment, bodyWeight, loadWeight);
 
-        // Run inference
+        // Jalankan inferensi untuk mendapatkan prediksi waktu.
         final prediction = _tfliteService.runInference(scaledFeatures);
 
-        // Accumulate
+        // Tambahkan ke total kumulatif.
         cumulativeSum += prediction;
 
-        // Create result
+        // Buat objek hasil untuk segmen ini.
         final segmentLabel = 'Segment ${i + 1}';
         final result = SegmentResult(
           label: segmentLabel,
@@ -112,7 +115,8 @@ class InferenceService {
     }
   }
 
-  /// Initialize all required services
+  /// Menginisialisasi semua komponen yang diperlukan (scaler dan model).
+  /// Harus dipanggil sebelum menggunakan layanan ini.
   Future<void> initialize() async {
     try {
       debugPrint('\n');
@@ -120,11 +124,11 @@ class InferenceService {
       debugPrint('║    Initializing Inference Pipeline Components            ║');
       debugPrint('╚══════════════════════════════════════════════════════════╝\n');
 
-      // Load scaler
+      // Muat parameter scaler dari file.
       await _scalerService.loadScaler();
       debugPrint('');
 
-      // Load model
+      // Muat model TFLite dari assets.
       await _tfliteService.loadModel();
       debugPrint('');
 
@@ -140,7 +144,7 @@ class InferenceService {
     }
   }
 
-  /// Clean up resources
+  /// Membersihkan sumber daya yang digunakan (menutup model TFLite).
   void dispose() {
     _tfliteService.close();
     debugPrint('🧹 Inference service resources cleaned up');

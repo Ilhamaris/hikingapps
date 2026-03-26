@@ -33,7 +33,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          ),
         ),
       ),
       body: FutureBuilder<List<HikingHistory>>(
@@ -87,14 +91,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         child: const Icon(Icons.delete, color: Colors.white),
                       ),
                       onDismissed: (direction) async {
-                        final messenger = ScaffoldMessenger.of(context);
+                        final shouldDelete = await showDialog<bool>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Hapus Riwayat?'),
+                              content: const Text(
+                                'Apakah Anda yakin ingin menghapus riwayat pendakian ini?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'Hapus',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (shouldDelete != true) return;
+
                         final id = history.id;
                         await _historyService.deleteHistory(id);
-                        if (!mounted) return;
+
+                        if (!context.mounted) return;
+
                         setState(() {
                           _historiesFuture = _historyService.getAllHistories();
                         });
-                        messenger.showSnackBar(
+
+                        ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Riwayat pendakian dihapus'),
                           ),
@@ -177,7 +211,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Total Naik: ${history.estimatedTime.inHours}j ${history.estimatedTime.inMinutes % 60}m',
+                                    'Total Naik: ${history.estimatedTime.inHours} j ${history.estimatedTime.inMinutes % 60} m',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[700],
@@ -192,6 +226,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     'Total Turun: 3j 15m',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    size: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Berat Badan: ${history.bodyWeight.toInt()} kg',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.backpack,
+                                    size: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Berat Tas: ${history.bagWeight.toInt()} kg',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[700],

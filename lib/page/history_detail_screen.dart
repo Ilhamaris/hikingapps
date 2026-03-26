@@ -8,7 +8,9 @@ class HistoryDetailScreen extends StatelessWidget {
   // Membangun tampilan detail riwayat pendakian
   @override
   Widget build(BuildContext context) {
-    // Mengambil data riwayat pendakian dari argumen navigasi
+    // Mengambil data riwayat pendakian yang dilewatkan melalui
+    // Navigator.pushNamed di layar sebelumnya. Disimpan dalam variabel
+    // `history` untuk dipakai sepanjang tampilan.
     final history =
         ModalRoute.of(context)?.settings.arguments as HikingHistory?;
 
@@ -107,7 +109,7 @@ class HistoryDetailScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${history?.estimatedTime.inHours ?? 0}j ${history?.estimatedTime.inMinutes ?? 0 % 60}m',
+                                  '${history?.estimatedTime.inHours ?? 0} j ${history?.estimatedTime.inMinutes ?? 0 % 60} m',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -139,6 +141,54 @@ class HistoryDetailScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Berat Badan',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${(history?.bodyWeight ?? 0).toInt()} kg',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Berat Tas',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${(history?.bagWeight ?? 0).toInt()} kg',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.purple,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -160,6 +210,8 @@ class HistoryDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
+                  // Menampilkan setiap `RouteSegment` dalam bentuk kartu
+                  // berisi nama pos awal dan tujuan serta estimasi waktu.
                   ...history?.segments.map((segment) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),

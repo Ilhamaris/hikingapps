@@ -70,12 +70,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // Content Cards
+            // Bagian konten berisikan beberapa pilihan fitur dalam bentuk
+            // kartu mudah diketuk (card). Setiap kartu membawa pengguna ke
+            // bagian lain aplikasi.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  // Informasi Jalur Card
+                  // Kartu "Mulai Pendakian" yang membuka daftar jalur
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/mountain-list');

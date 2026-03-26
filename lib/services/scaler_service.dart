@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import '../models/scaler_model.dart';
 import 'package:flutter/foundation.dart';
 
-/// Service for loading and managing scaler parameters from JSON file
+// Layanan untuk memuat dan mengelola parameter scaler (rata-rata dan
+// standar deviasi) dari file JSON. Scaler digunakan untuk menormalisasi
+// fitur input sebelum dimasukkan ke model machine learning.
 class ScalerService {
+  // Singleton pattern untuk memastikan satu instance saja.
   static final ScalerService _instance = ScalerService._internal();
 
   ScalerService._internal();
@@ -13,11 +16,12 @@ class ScalerService {
     return _instance;
   }
 
+  // Model scaler yang disimpan dalam cache setelah dimuat.
   ScalerModel? _scaler;
 
-  /// Load scaler parameters from JSON file
-  /// Returns the loaded ScalerModel
-  /// Throws exception if loading fails
+  /// Memuat parameter scaler dari file JSON di assets.
+  /// Mengembalikan ScalerModel yang dimuat.
+  /// Melempar exception jika gagal memuat.
   Future<ScalerModel> loadScaler() async {
     try {
       debugPrint('╔══════════════════════════════════════════════════════════╗');
@@ -25,8 +29,11 @@ class ScalerService {
       debugPrint('╚══════════════════════════════════════════════════════════╝');
       debugPrint('📍 Attempting to load: assets/models/scaler_params.json');
 
+      // Baca file JSON sebagai string.
       final jsonString = await rootBundle.loadString('assets/models/scaler_params.json');
+      // Parse string menjadi map.
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+      // Buat objek ScalerModel dari map.
       _scaler = ScalerModel.fromJson(jsonMap);
 
       debugPrint('✅ Scaler loaded successfully!');
@@ -53,14 +60,14 @@ class ScalerService {
     }
   }
 
-  /// Get cached scaler model (returns null if not loaded)
+  /// Mendapatkan model scaler yang sudah di-cache (null jika belum dimuat).
   ScalerModel? getScaler() => _scaler;
 
-  /// Check if scaler is loaded
+  /// Mengecek apakah scaler sudah dimuat.
   bool isLoaded() => _scaler != null;
 
-  /// Perform feature scaling on input values
-  /// Takes raw values and applies (value - mean) / std transformation
+  /// Melakukan scaling fitur pada nilai input mentah.
+  /// Menggunakan transformasi (nilai - rata-rata) / standar_deviasi.
   List<double> scaleFeatures(List<double> rawValues) {
     if (_scaler == null) {
       throw Exception('Scaler not loaded. Call loadScaler() first.');
@@ -72,6 +79,7 @@ class ScalerService {
       );
     }
 
+    // Hitung nilai yang sudah dinormalisasi untuk setiap fitur.
     return List<double>.generate(
       rawValues.length,
       (i) => (rawValues[i] - _scaler!.mean[i]) / _scaler!.std[i],

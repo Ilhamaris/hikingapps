@@ -1,18 +1,13 @@
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-// Model untuk merepresentasikan bounding box dari area geografis
+// batas area geografis
 class BoundingBox {
-  // Batas utara (latitude maksimum)
   final double north;
-  // Batas selatan (latitude minimum)
   final double south;
-  // Batas timur (longitude maksimum)
   final double east;
-  // Batas barat (longitude minimum)
   final double west;
 
-  // Konstruktor untuk menginisialisasi bounding box
   BoundingBox({
     required this.north,
     required this.south,
@@ -32,7 +27,11 @@ class BoundingBox {
   // Getter untuk mendapatkan tinggi area dalam derajat
   double get height => north - south;
 
-  /// Convert BoundingBox to LatLngBounds for use in map UI
+  /// Mengubah BoundingBox menjadi objek `LatLngBounds` dari
+  /// paket flutter_map/latlong2.
+  ///
+  /// Konversi ini diperlukan agar bounding box dapat langsung digunakan
+  /// untuk mengatur tampilan peta (misalnya `MapController.fitBounds`).
   LatLngBounds toLatLngBounds() {
     return LatLngBounds(
       LatLng(south, west),

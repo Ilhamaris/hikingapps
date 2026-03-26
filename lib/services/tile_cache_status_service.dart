@@ -1,6 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service untuk mengelola status cache tile untuk setiap jalur pendakian
+// Layanan untuk melacak status unduhan tile peta offline untuk setiap rute.
+// Menggunakan SharedPreferences untuk menyimpan informasi apakah tile
+// untuk rute tertentu sudah diunduh atau belum, sehingga aplikasi bisa
+// menentukan apakah perlu mengunduh ulang atau menggunakan cache.
 class TileCacheStatusService {
   // Prefix untuk key SharedPreferences cache status
   static const String _cachePrefix = 'tile_cache_';

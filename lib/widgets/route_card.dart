@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/hiking_route.dart';
 
-/// Widget kartu untuk menampilkan informasi rute pendakian
+// Widget kartu yang menampilkan informasi rute pendakian dalam bentuk
+// kartu yang bisa diklik. Kartu ini menunjukkan nama rute, jarak,
+// dan tombol untuk memilih rute tersebut.
 class RouteCard extends StatelessWidget {
-  final HikingRoute route; // Data rute pendakian
-  final VoidCallback onTap; // Callback ketika kartu diklik
+  // Data rute pendakian yang akan ditampilkan.
+  final HikingRoute route;
+  // Fungsi yang dipanggil ketika kartu diklik (biasanya untuk navigasi).
+  final VoidCallback onTap;
 
   const RouteCard({
     super.key,
@@ -15,13 +19,13 @@ class RouteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // Mendeteksi saat pengguna mengetuk kartu
+      onTap: onTap, // Mengaktifkan callback saat diklik.
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          // Menambahkan bayangan untuk efek kedalaman
+          // Bayangan untuk memberikan efek 3D dan kedalaman.
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
@@ -38,12 +42,12 @@ class RouteCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Bagian kiri: nama dan jarak rute
+                  // Bagian kiri: menampilkan nama rute dan jaraknya.
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        route.name, // Menampilkan nama rute
+                        route.name, // Nama rute dari data.
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -52,7 +56,7 @@ class RouteCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${route.distance.toStringAsFixed(2)} km', // distance from route data
+                        '${route.distance.toStringAsFixed(2)} km', // Jarak dalam km, dibulatkan 2 desimal.
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -65,7 +69,7 @@ class RouteCard extends StatelessWidget {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                // Tombol untuk memilih jalur ini
+                // Tombol hijau untuk memilih jalur ini, memanggil onTap.
                 child: ElevatedButton(
                   onPressed: onTap,
                   style: ElevatedButton.styleFrom(

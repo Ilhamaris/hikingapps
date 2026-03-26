@@ -1,6 +1,9 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+// Layanan untuk mengelola lokasi pengguna menggunakan paket Geolocator.
+// Menyediakan fungsi untuk meminta izin, mendapatkan lokasi saat ini,
+// dan streaming lokasi real-time untuk pelacakan selama pendakian.
 class LocationService {
   /// Meminta izin lokasi dari pengguna
   static Future<bool> requestLocationPermission() async {

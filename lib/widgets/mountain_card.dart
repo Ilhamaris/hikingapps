@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/mountain.dart';
 
-/// Widget kartu untuk menampilkan informasi gunung
+// Widget kartu yang menampilkan informasi dasar gunung, termasuk nama,
+// ketinggian, lokasi, dan deskripsi singkat. Kartu ini bisa diklik
+// untuk memilih gunung dan melihat rute-rutenya.
 class MountainCard extends StatelessWidget {
-  final Mountain mountain; // Data gunung
-  final VoidCallback onTap; // Callback ketika kartu diklik
+  // Data gunung yang akan ditampilkan pada kartu.
+  final Mountain mountain;
+  // Fungsi yang dipanggil saat kartu diklik (biasanya navigasi ke daftar rute).
+  final VoidCallback onTap;
 
   const MountainCard({
     super.key,
@@ -15,13 +19,13 @@ class MountainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // Mendeteksi saat pengguna mengetuk kartu
+      onTap: onTap, // Mengaktifkan callback saat diklik.
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          // Menambahkan bayangan untuk efek kedalaman
+          // Bayangan untuk efek visual yang menarik.
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
@@ -37,7 +41,7 @@ class MountainCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  // Ikon gunung dengan background berwarna
+                  // Ikon gunung dengan background hijau muda.
                   Container(
                     width: 40,
                     height: 40,
@@ -57,7 +61,7 @@ class MountainCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          mountain.name, // Menampilkan nama gunung
+                          mountain.name, // Nama gunung dari data.
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -66,7 +70,7 @@ class MountainCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${mountain.elevation.toStringAsFixed(0)} mdpl • ${mountain.location}', // Ketinggian dan lokasi
+                          '${mountain.elevation.toStringAsFixed(0)} mdpl • ${mountain.location}', // Ketinggian (meter di atas permukaan laut) dan lokasi.
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -78,7 +82,7 @@ class MountainCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              // Deskripsi gunung dengan batasan 3 baris
+              // Deskripsi gunung, dibatasi maksimal 3 baris dengan ellipsis jika terlalu panjang.
               Text(
                 mountain.description,
                 maxLines: 3,
@@ -92,7 +96,7 @@ class MountainCard extends StatelessWidget {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                // Tombol untuk memilih gunung ini
+                // Tombol hijau untuk memilih gunung ini dan melihat jalur.
                 child: ElevatedButton(
                   onPressed: onTap,
                   style: ElevatedButton.styleFrom(

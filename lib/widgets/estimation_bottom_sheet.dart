@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/segment_result.dart';
 
-/// Widget for displaying a single segment result card
+/// Widget untuk menampilkan card hasil estimasi segmen tunggal
+/// Menunjukkan informasi segmen seperti waktu estimasi dan jarak
 class SegmentResultCard extends StatelessWidget {
+  /// Hasil estimasi segmen yang akan ditampilkan
   final SegmentResult result;
+
+  /// Indeks segmen dalam daftar (dimulai dari 0)
   final int index;
 
+  /// Konstruktor untuk SegmentResultCard
   const SegmentResultCard({
     super.key,
     required this.result,
     required this.index,
   });
 
+  /// Membangun UI card untuk menampilkan hasil estimasi segmen
+  /// Menggunakan gradient background dan menampilkan nomor segmen, label, dan waktu estimasi
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -37,7 +44,7 @@ class SegmentResultCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Segment label and index
+              // Segment label and index - nomor dan nama segmen
               Row(
                 children: [
                   Container(
@@ -70,14 +77,14 @@ class SegmentResultCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Divider
+              // Divider - garis pemisah
               Divider(
                 color: Colors.green.shade300,
                 thickness: 1,
               ),
               const SizedBox(height: 12),
 
-              // Prediction value
+              // Prediction value - nilai prediksi waktu segmen
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -101,7 +108,7 @@ class SegmentResultCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Cumulative value
+              // Cumulative value - waktu kumulatif dari awal perjalanan
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -132,10 +139,19 @@ class SegmentResultCard extends StatelessWidget {
 }
 
 /// Bottom sheet for displaying estimation results
+/// Widget EstimationBottomSheet adalah widget stateful yang menampilkan hasil estimasi waktu hiking
+/// dalam bentuk bottom sheet yang dapat di-drag. Widget ini menunjukkan daftar segmen perjalanan
+/// dengan waktu estimasi kumulatif dan memungkinkan pengguna menarik untuk memperbesar atau memperkecil tampilan.
 class EstimationBottomSheet extends StatefulWidget {
+  /// Daftar hasil estimasi segmen yang akan ditampilkan dalam bottom sheet
   final List<SegmentResult> results;
+
+  /// Callback yang dipanggil ketika bottom sheet ditutup
   final VoidCallback onClose;
 
+  /// Konstruktor untuk EstimationBottomSheet
+  /// [results] adalah daftar hasil estimasi segmen yang akan ditampilkan
+  /// [onClose] adalah callback yang dipanggil ketika pengguna menekan tombol tutup
   const EstimationBottomSheet({
     super.key,
     required this.results,
@@ -148,14 +164,26 @@ class EstimationBottomSheet extends StatefulWidget {
 
 class _EstimationBottomSheetState extends State<EstimationBottomSheet>
     with SingleTickerProviderStateMixin {
+  /// Controller untuk mengatur animasi drag bottom sheet
   late AnimationController _animationController;
-    late Animation<double> _animation;
 
+  /// Animasi untuk transisi tinggi bottom sheet
+  late Animation<double> _animation;
+
+  /// Posisi drag saat ini untuk menghitung perubahan tinggi
   double _dragPosition = 0;
-  final double _minHeight = 0.25; // 25% of screen
-  final double _maxHeight = 1.0; // Full screen
+
+  /// Tinggi minimum bottom sheet (25% dari layar)
+  final double _minHeight = 0.25;
+
+  /// Tinggi maksimum bottom sheet (100% dari layar)
+  final double _maxHeight = 1.0;
+
+  /// Tinggi saat ini dari bottom sheet
   late double _currentHeight;
 
+  /// Inisialisasi state ketika widget pertama kali dibuat
+  /// Mengatur tinggi awal ke minimum dan membuat animation controller
   @override
   void initState() {
     super.initState();
@@ -177,16 +205,22 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
     });
   }
 
+  /// Membersihkan resource ketika widget dihapus
+  /// Dispose animation controller untuk mencegah memory leak
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
 
+  /// Menangani awal drag gesture
+  /// Menyimpan posisi awal drag untuk menghitung perubahan
   void _handleDragStart(double position) {
     _dragPosition = position;
   }
 
+  /// Menangani update selama drag gesture
+  /// Menghitung tinggi baru berdasarkan pergerakan jari dan membatasi dalam rentang minimum-maksimum
   void _handleDragUpdate(double position) {
     final screenHeight = MediaQuery.of(context).size.height;
     final delta = _dragPosition - position;
@@ -199,6 +233,8 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
     _dragPosition = position;
   }
 
+  /// Menangani akhir drag gesture
+  /// Menganimasikan bottom sheet ke posisi terdekat (minimum atau maksimum)
   void _handleDragEnd() {
     // Snap to nearest position
     final snapThreshold = 0.5;
@@ -216,6 +252,8 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
     });
   }
 
+  /// Membangun UI bottom sheet dengan gesture detector untuk drag
+  /// Menghitung tinggi berdasarkan state saat ini dan membuat container dengan rounded corner
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -243,7 +281,7 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
         ),
         child: Column(
           children: [
-            // Handle bar
+            // Handle bar - bilah untuk menarik bottom sheet
             Padding(
               padding: const EdgeInsets.only(top: 12.0),
               child: Container(
@@ -256,7 +294,7 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
               ),
             ),
 
-            // Header
+            // Header - bagian atas dengan judul dan tombol tutup
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -279,6 +317,7 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
                       ),
                     ],
                   ),
+                  // Menampilkan total waktu estimasi jika ada hasil
                   if (widget.results.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
@@ -295,14 +334,14 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
               ),
             ),
 
-            // Divider
+            // Divider - garis pemisah antara header dan daftar
             Divider(
               color: Colors.grey.shade200,
               height: 1,
               thickness: 1,
             ),
 
-            // Segments list
+            // Segments list - daftar segmen hasil estimasi
             Expanded(
               child: widget.results.isEmpty
                   ? Center(
@@ -329,6 +368,7 @@ class _EstimationBottomSheetState extends State<EstimationBottomSheet>
                       padding: const EdgeInsets.only(top: 8, bottom: 16),
                       itemCount: widget.results.length,
                       itemBuilder: (context, index) {
+                        // Membuat card untuk setiap segmen hasil estimasi
                         return SegmentResultCard(
                           result: widget.results[index],
                           index: index,

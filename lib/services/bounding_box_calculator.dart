@@ -1,7 +1,10 @@
 import 'package:latlong2/latlong.dart';
 import '../models/bounding_box.dart';
 
-/// Service untuk menghitung bounding box dari daftar titik koordinat
+// Layanan untuk menghitung area persegi panjang (bounding box) yang
+// meliputi semua titik koordinat dalam rute pendakian. Bounding box
+// ini digunakan untuk mengatur tampilan peta agar semua titik rute
+// terlihat dengan buffer area sekitar 500 meter.
 class BoundingBoxCalculator {
   // Faktor untuk buffer area (dalam derajat, ~500 meter pada ekuator)
   static const double bufferInDegrees = 0.0045;

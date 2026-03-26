@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-// Kelas untuk merepresentasikan riwayat pendakian yang telah dilakukan
 class HikingHistory {
   final String id;
   final String mountainName;
@@ -22,7 +21,7 @@ class HikingHistory {
     required this.segments,
   });
 
-  // Convert HikingHistory to JSON
+  /// Konversi objek menjadi Map JSON untuk penyimpanan atau pengiriman.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -36,7 +35,7 @@ class HikingHistory {
     };
   }
 
-  // Create HikingHistory from JSON
+  /// Buat HikingHistory dari Map JSON (misalnya saat membaca dari file).
   factory HikingHistory.fromJson(Map<String, dynamic> json) {
     return HikingHistory(
       id: json['id'] ?? '',
@@ -52,10 +51,11 @@ class HikingHistory {
     );
   }
 
-  // Convert to JSON string
+  /// Mendapatkan representasi JSON sebagai string.
   String toJsonString() => jsonEncode(toJson());
 }
 
+/// Subkelas yang menggambarkan satu segmen perjalanan antara dua titik.
 class RouteSegment {
   final String from;
   final String to;
@@ -67,7 +67,7 @@ class RouteSegment {
     required this.estimatedTime,
   });
 
-  // Convert RouteSegment to JSON
+  /// Konversi segmen ke Map JSON.
   Map<String, dynamic> toJson() {
     return {
       'from': from,
@@ -76,7 +76,7 @@ class RouteSegment {
     };
   }
 
-  // Create RouteSegment from JSON
+  /// Buat segmen dari Map JSON.
   factory RouteSegment.fromJson(Map<String, dynamic> json) {
     return RouteSegment(
       from: json['from'] ?? '',

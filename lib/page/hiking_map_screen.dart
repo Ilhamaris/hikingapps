@@ -14,10 +14,17 @@ import '../services/location_service.dart';
 import '../services/history_service.dart';
 import 'dart:async';
 
+// Halaman utama yang menampilkan peta jalur pendakian, posisi
+// pengguna, dan estimasi waktu ke setiap pos berdasarkan model ML.
+
 class HikingMapScreen extends StatefulWidget {
+  // Data gunung yang dipilih
   final Mountain mountain;
+  // Rute yang dipilih pada gunung tersebut
   final HikingRoute route;
+  // Berat badan pendaki (diperlukan untuk estimasi waktu)
   final double bodyWeight;
+  // Berat beban/ tas pendaki
   final double bagWeight;
 
   const HikingMapScreen({

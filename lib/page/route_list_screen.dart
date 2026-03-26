@@ -32,7 +32,10 @@ class _RouteListScreenState extends State<RouteListScreen> {
     });
   }
 
-  // helper that reads each route file and computes distance/waypoints
+  // fungsi pembantu untuk membaca file jalur berdasarkan metadata
+  // yang didapat dari MountainLoader. Selain memuat jalur, ia juga
+  // menghitung jarak total (km) dan daftar waypoint untuk ditampilkan
+  // pada layar sebelumnya.
   Future<List<HikingRoute>> _loadRoutesFromMetadata(
     MountainMetadata metadata,
   ) async {
@@ -78,6 +81,8 @@ class _RouteListScreenState extends State<RouteListScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      // Pertama kita ambil metadata gunung, kemudian ketika metadata
+      // sudah tersedia kita memulai proses memuat file jalur individu.
       body: FutureBuilder<MountainMetadata?>(
         future: _metadataFuture,
         builder: (context, snapshot) {

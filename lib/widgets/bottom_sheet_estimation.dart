@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 
 /// Widget bottom sheet untuk menampilkan estimasi waktu perjalanan ke setiap pos
+/// Menunjukkan daftar pos-pos dalam rute dengan estimasi waktu tempuh ke masing-masing pos
 class BottomSheetEstimation extends StatelessWidget {
-  final List<EstimationSegment> segments; // Daftar segmen rute dengan estimasi waktu
+  /// Daftar segmen rute dengan estimasi waktu ke setiap pos
+  final List<EstimationSegment> segments;
 
+  /// Konstruktor untuk BottomSheetEstimation
+  /// [segments] adalah daftar pos-pos dengan estimasi waktu yang akan ditampilkan
   const BottomSheetEstimation({
     super.key,
     required this.segments,
   });
 
+  /// Membangun UI bottom sheet dengan header dan daftar segmen
+  /// Menggunakan Column dengan mainAxisSize.min agar bottom sheet menyesuaikan tinggi konten
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -41,7 +47,7 @@ class BottomSheetEstimation extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            // Membangun daftar segmen rute
+            // Membangun daftar segmen rute menggunakan List.generate
             child: Column(
               children: List.generate(
                 segments.length,
@@ -56,12 +62,13 @@ class BottomSheetEstimation extends StatelessWidget {
   }
 
   /// Membangun widget untuk setiap segmen rute dengan estimasi waktu
+  /// Menampilkan ikon lokasi, nama pos, dan estimasi waktu dalam format jam dan menit
   Widget _buildSegment(EstimationSegment segment) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          // Ikon lokasi dengan circle badge
+          // Ikon lokasi dengan circle badge berwarna hijau
           Container(
             width: 32,
             height: 32,
@@ -108,11 +115,20 @@ class BottomSheetEstimation extends StatelessWidget {
   }
 }
 
+/// Model data untuk menyimpan informasi estimasi waktu ke sebuah pos
+/// Berisi nama lokasi dan estimasi waktu dalam jam dan menit
 class EstimationSegment {
+  /// Nama lokasi atau pos tujuan
   final String location;
+
+  /// Estimasi waktu dalam jam
   final int hours;
+
+  /// Estimasi waktu dalam menit
   final int minutes;
 
+  /// Konstruktor untuk EstimationSegment
+  /// [location] nama pos, [hours] jam estimasi, [minutes] menit estimasi
   EstimationSegment({
     required this.location,
     required this.hours,

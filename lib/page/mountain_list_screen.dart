@@ -66,6 +66,8 @@ class _MountainListScreenState extends State<MountainListScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
+                // Field pencarian sederhana yang belum terhubung ke logika
+                // filter, hanya sebagai placeholder antarmuka.
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(

@@ -45,6 +45,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
     }
   }
 
+  // Fungsi ini memicu pemrosesan beberapa segmen contoh melalui
+  // layanan inference. Digunakan untuk menguji pipeline tanpa
+  // menavigasi melalui peta.
   Future<void> _processTestSegments() async {
     if (!_isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -315,6 +318,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
     );
   }
 
+  // Widget helper yang membuat baris status dengan ikon dan label
+  // digunakan di layar untuk menampilkan status tiap langkah pemrosesan
   Widget _buildStatusItem({
     required IconData icon,
     required String label,

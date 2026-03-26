@@ -161,7 +161,9 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              // Start Button
+              // Tombol untuk memulai pendakian setelah memasukkan parameter
+              // ketika ditekan akan memvalidasi input dan melanjutkan ke
+              // layar peta dengan membawa data yang dimasukkan.
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

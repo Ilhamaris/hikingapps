@@ -5,24 +5,29 @@ import '../models/mountain.dart';
 import '../models/mountain_metadata.dart';
 import '../models/mountain_route.dart';
 
+// Layanan untuk memuat data gunung, metadata, dan rute dari folder assets.
+// Menggunakan rootBundle untuk mengakses file JSON yang disimpan di aplikasi.
 class MountainLoader {
+  // Path dasar untuk folder rute di assets.
   static const String _routesBasePath = 'assets/routes';
 
-  /// Load all available mountains from assets/routes folders
+  /// Memuat semua gunung yang tersedia dari folder assets/routes.
+  /// Mengembalikan daftar objek Mountain yang berhasil dimuat.
   static Future<List<Mountain>> loadAllMountains() async {
     final mountains = <Mountain>[];
 
-    // Get list of mountain folders - glonggong and mongkrang
+    // Daftar folder gunung yang tersedia (misal glonggong, mongkrang).
     final mountainFolders = ['glonggong', 'mongkrang'];
 
     for (final folder in mountainFolders) {
       try {
+        // Muat data gunung dari folder tersebut.
         final mountain = await _loadMountain(folder);
         if (mountain != null) {
           mountains.add(mountain);
         }
       } catch (e) {
-        // Skip mountains that fail to load
+        // Lewati gunung yang gagal dimuat, tapi catat error.
         debugPrint('Error loading mountain $folder: $e');
       }
     }
@@ -30,20 +35,25 @@ class MountainLoader {
     return mountains;
   }
 
-  /// Load a specific mountain by folder name
+  /// Memuat data gunung tertentu berdasarkan nama folder.
+  /// Membaca file metadata.json untuk mendapatkan detail gunung.
   static Future<Mountain?> _loadMountain(String mountainFolder) async {
     try {
+      // Path ke file metadata gunung.
       final metadataPath = '$_routesBasePath/$mountainFolder/metadata.json';
+      // Baca isi file sebagai string JSON.
       final metadataJson = await rootBundle.loadString(metadataPath);
+      // Parse JSON menjadi objek MountainMetadata.
       final metadata = MountainMetadata.fromJson(jsonDecode(metadataJson));
 
+      // Buat objek Mountain dari data metadata.
       return Mountain(
         id: mountainFolder,
         name: metadata.mountainName,
         location: metadata.province,
         elevation: metadata.elevation.toDouble(),
         description: metadata.description,
-        imagePath: 'assets/images/icon.png', // Default image path
+        imagePath: 'assets/images/icon.png', // Path gambar default.
       );
     } catch (e) {
       debugPrint('Failed to load mountain $mountainFolder: $e');
@@ -51,10 +61,13 @@ class MountainLoader {
     }
   }
 
-  /// Load metadata for a specific mountain
+  /// Memuat metadata untuk gunung tertentu berdasarkan ID.
+  /// Metadata berisi nama gunung, elevasi, provinsi, deskripsi, dan daftar rute.
   static Future<MountainMetadata?> loadMountainMetadata(String mountainId) async {
     try {
+      // Path ke file metadata.
       final path = '$_routesBasePath/$mountainId/metadata.json';
+      // Baca dan parse JSON.
       final json = await rootBundle.loadString(path);
       return MountainMetadata.fromJson(jsonDecode(json));
     } catch (e) {
@@ -63,13 +76,16 @@ class MountainLoader {
     }
   }
 
-  /// Load a specific route from a mountain
+  /// Memuat rute tertentu dari gunung tertentu.
+  /// Rute berisi daftar titik (RoutePoint) yang membentuk jalur pendakian.
   static Future<MountainRoute?> loadRoute(
     String mountainId,
     String routeFile,
   ) async {
     try {
+      // Path ke file rute (misal assets/routes/glonggong/rute/route.json).
       final path = '$_routesBasePath/$mountainId/rute/$routeFile';
+      // Baca dan parse JSON menjadi MountainRoute.
       final json = await rootBundle.loadString(path);
       return MountainRoute.fromJson(jsonDecode(json));
     } catch (e) {

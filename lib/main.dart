@@ -11,26 +11,30 @@ import 'models/mountain.dart';
 import 'models/hiking_route.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-// Fungsi utama yang menjalankan aplikasi Flutter
+// Fungsi utama aplikasi. Dipanggil pertama kali saat aplikasi berjalan.
+// Melakukan inisialisasi widget binding dan menampilkan splash screen native
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Menjaga splash screen hingga runApp dieksekusi
   FlutterNativeSplash.preserve(
     widgetsBinding: WidgetsFlutterBinding.ensureInitialized(),
   );
-  runApp(const MyApp());
-  FlutterNativeSplash.remove();
+  runApp(const MyApp()); // Menjalankan widget root
+  FlutterNativeSplash.remove(); // Menghapus splash screen setelah aplikasi siap
 }
 
 /// Widget utama aplikasi
+/// Mengatur tema umum, jalur navigasi, serta layar awal
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Prediksi Waktu Pendakian', // Judul aplikasi
+      // Judul yang muncul di sistem operasi (misal recent apps)
+      title: 'Prediksi Waktu Pendakian',
       theme: ThemeData(
-        primaryColor: Colors.green, // Warna utama aplikasi
+        primaryColor: Colors.green, // Warna dasar aplikasi
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.green,
@@ -42,11 +46,11 @@ class MyApp extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        // Tema untuk Floating Action Button
+        // Tema khusus untuk tombol FAB
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: Colors.green,
         ),
-        // Tema untuk Elevated Button
+        // Tema untuk tombol terangkat (ElevatedButton)
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
@@ -57,16 +61,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(), // Layar pertama yang ditampilkan
-      // rute navigasi aplikasi
+      home: const HomeScreen(), // Layar awal saat aplikasi dibuka
+      // Definisi daftar rute navigasi dinamika
       routes: {
-        '/home': (context) => const HomeScreen(), // Layar beranda
+        '/home': (context) => const HomeScreen(), // Halaman beranda
         '/mountain-list': (context) => const MountainListScreen(),
         '/route-list': (context) => const RouteListScreen(),
         '/input-parameter': (context) => const InputParameterScreen(),
         '/history': (context) => const HistoryScreen(),
         '/history-detail': (context) => const HistoryDetailScreen(),
         '/estimation': (context) => const EstimationScreen(),
+        // Rute khusus yang memerlukan argumen kompleks
         '/hiking-map': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as Map?;
           final mountain = args?['mountain'] as Mountain?;
@@ -74,6 +79,7 @@ class MyApp extends StatelessWidget {
           final bodyWeight = args?['bodyWeight'] as double? ?? 0.0;
           final bagWeight = args?['bagWeight'] as double? ?? 0.0;
 
+          // Validasi argumen, tampilkan error jika data hilang
           if (mountain == null || route == null) {
             return Scaffold(
               appBar: AppBar(title: const Text('Error')),
@@ -83,6 +89,7 @@ class MyApp extends StatelessWidget {
             );
           }
 
+          // Jika argumen valid, tampilkan halaman peta hiking
           return HikingMapScreen(
             mountain: mountain,
             route: route,
