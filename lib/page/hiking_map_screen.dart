@@ -42,6 +42,7 @@ class HikingMapScreen extends StatefulWidget {
 class _HikingMapScreenState extends State<HikingMapScreen> {
   late MapController mapController;
   final DraggableScrollableController _sheetController = DraggableScrollableController();
+  final ValueNotifier<double> _sheetExtent = ValueNotifier(0.5);
   LatLng? currentLocation;
   StreamSubscription<LatLng>? _locationSubscription;
 
@@ -56,12 +57,12 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   List<SegmentResult> _segmentResults = [];
 
   final GlobalKey _sheetKey = GlobalKey();
-  final ValueNotifier<double> _sheetHeight = ValueNotifier(0);
 
   @override
   void initState() {
     super.initState();
     mapController = MapController();
+    _sheetController.addListener(_syncSheetExtent);
     _initLocation();
 
     // prepare inference service
@@ -222,6 +223,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     }
   }
 
+  void _syncSheetExtent() {
+    _sheetExtent.value = _sheetController.size;
+  }
+
   void _fitToRoute() {
     if (_routePoints.isEmpty) return;
     final points = _routePoints.map((p) => LatLng(p.lat, p.lon)).toList();
@@ -371,7 +376,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   @override
   void dispose() {
     _locationSubscription?.cancel();
-    _sheetHeight.dispose();
+    _sheetController.removeListener(_syncSheetExtent);
+    _sheetController.dispose();
+    _sheetExtent.dispose();
     _inferenceService.dispose();
     super.dispose();
   }
@@ -433,312 +440,302 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                     )
                     .toList();
 
-                return Stack(
-                  children: [
-                    FlutterMap(
-                      mapController: mapController,
-                      options: MapOptions(
-                        initialCenter: LatLng(0, 0),
-                        initialZoom: 13,
-                        onPositionChanged: _onMapPositionChanged,
-                      ),
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bodyHeight = constraints.maxHeight;
+                    return Stack(
                       children: [
-                        TileLayer(
-                          urlTemplate: TileConfig.openStreetMapUrl,
-                          userAgentPackageName: TileConfig.userAgent,
-                        ),
-                        if (routeLatLng.isNotEmpty)
-                          PolylineLayer(
-                            polylines: [
-                              Polyline(
-                                points: routeLatLng,
-                                strokeWidth: 4,
-                                color: Colors.red,
-                              ),
-                            ],
+                        FlutterMap(
+                          mapController: mapController,
+                          options: MapOptions(
+                            initialCenter: LatLng(0, 0),
+                            initialZoom: 13,
+                            onPositionChanged: _onMapPositionChanged,
                           ),
-                        if (routeMarkers.isNotEmpty)
-                          MarkerLayer(markers: routeMarkers),
-                        if (currentLocation != null)
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: currentLocation!,
-                                width: 22,
-                                height: 22,
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.blue,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.my_location,
-                                    color: Colors.white,
-                                    size: 2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-
-                    DraggableScrollableSheet(
-                      controller: _sheetController,
-                      initialChildSize: 0.5,
-                      minChildSize: 0.2,
-                      maxChildSize: 0.85,
-                      builder: (context, scrollController) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          final renderBox = _sheetKey.currentContext?.findRenderObject() as RenderBox?;
-                          if (renderBox != null) {
-                            _sheetHeight.value = renderBox.size.height;
-                          }
-                        });
-                        // keep original index so we can map back to segment results
-                    final postsWithIndex = _routePoints
-                        .asMap()
-                        .entries
-                        .where((e) => e.value.name != null)
-                        .toList();
-                    return Container(
-                          key: _sheetKey,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
+                          children: [
+                            TileLayer(
+                              urlTemplate: TileConfig.openStreetMapUrl,
+                              userAgentPackageName: TileConfig.userAgent,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 8,
-                                offset: Offset(0, -2),
+                            if (routeLatLng.isNotEmpty)
+                              PolylineLayer(
+                                polylines: [
+                                  Polyline(
+                                    points: routeLatLng,
+                                    strokeWidth: 4,
+                                    color: Colors.red,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // Handle
-                              Container(
-                                height: 4,
-                                width: 40,
-                                margin: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              // Header + card-style list
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  children: const [
-                                    Icon(
-                                      Icons.timer_outlined,
-                                      color: Colors.green,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Estimasi Waktu ke Pos',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
+                            if (routeMarkers.isNotEmpty)
+                              MarkerLayer(markers: routeMarkers),
+                            if (currentLocation != null)
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: currentLocation!,
+                                    width: 22,
+                                    height: 22,
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.blue,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.my_location,
+                                        color: Colors.white,
+                                        size: 2,
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        DraggableScrollableSheet(
+                          controller: _sheetController,
+                          initialChildSize: 0.5,
+                          minChildSize: 0.2,
+                          maxChildSize: 0.85,
+                          builder: (context, scrollController) {
+                            final postsWithIndex = _routePoints
+                                .asMap()
+                                .entries
+                                .where((e) => e.value.name != null)
+                                .toList();
+                            return Container(
+                              key: _sheetKey,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 8,
+                                    offset: Offset(0, -2),
+                                  ),
+                                ],
                               ),
-                              Expanded(
-                                child: Builder(builder: (context) {
-                                  // build a typed display list that may include current location
-                                  final List<MapEntry<int, RoutePoint>?> displayItems = [];
-                                  if (currentLocation != null) {
-                                    displayItems.add(null); // null marks current location
-                                  }
-                                  for (var e in postsWithIndex) {
-                                    displayItems.add(e);
-                                  }
-
-                                  return ListView.separated(
-                                    controller: scrollController,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    itemCount: displayItems.length,
-                                    separatorBuilder: (_, _) => const SizedBox(
-                                      height: 12,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 4,
+                                    width: 40,
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8,
                                     ),
-                                    itemBuilder: (context, idx) {
-                                      final item = displayItems[idx];
-                                      if (item == null) {
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade50,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Colors.blue.shade100,
-                                            ),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                color: Colors.black12,
-                                                blurRadius: 4,
-                                                offset: Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: ListTile(
-                                            leading: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.my_location,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ),
-                                            title: const Text(
-                                              'Lokasi Sekarang',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            subtitle: _isEstimating
-                                                ? Row(
-                                                    children: const [
-                                                      SizedBox(
-                                                        width: 16,
-                                                        height: 16,
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Text('Estimating...'),
-                                                    ],
-                                                  )
-                                                : null,
-                                            trailing: const SizedBox.shrink(),
-                                          ),
-                                        );
-                                      }
-
-                                      final entry = item; // MapEntry<int, RoutePoint>
-                                      final p = entry.value;
-                                      final originalIdx = entry.key;
-                                      int estimatedTime = 0;
-                                      if (_segmentResults.isNotEmpty &&
-                                          originalIdx < _segmentResults.length) {
-                                        estimatedTime =
-                                            (_segmentResults[originalIdx]
-                                                        .cumulative /
-                                                    60)
-                                                .round();
-                                      }
-
-                                      return Card(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    child: Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.timer_outlined,
+                                          color: Colors.green,
                                         ),
-                                        elevation: 2,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 4, vertical: 4),
-                                          child: ListTile(
-                                            contentPadding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            leading: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.shade50,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(
-                                                // match map marker icons: flag for last point, otherwise house
-                                                p == _routePoints.last
-                                                    ? Icons.flag
-                                                    : Icons.house_siding,
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                            title: Text(
-                                              // show the actual post name if available, otherwise fall back to Pos number
-                                              p.name != null && p.name!.isNotEmpty
-                                                  ? p.name! // names were already filtered, but guard anyway
-                                                  : 'Pos ${currentLocation != null ? idx : idx + 1}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            subtitle: _isEstimating
-                                                ? Row(
-                                                    children: const [
-                                                      SizedBox(
-                                                        width: 16,
-                                                        height: 16,
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Text('Estimating...'),
-                                                    ],
-                                                  )
-                                                : null,
-                                            trailing: Text(
-                                              'Estimasi waktu: $estimatedTime menit',
-                                              style: const TextStyle(
-                                                color: Colors.green,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                            onTap: () {
-                                              // move map to selected post
-                                              mapController.move(
-                                                  LatLng(p.lat, p.lon), 17);
-                                            },
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Estimasi Waktu ke Pos',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Builder(builder: (context) {
+                                      final List<MapEntry<int, RoutePoint>?> displayItems = [];
+                                      if (currentLocation != null) {
+                                        displayItems.add(null);
+                                      }
+                                      for (var e in postsWithIndex) {
+                                        displayItems.add(e);
+                                      }
+
+                                      return ListView.separated(
+                                        controller: scrollController,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
+                                        itemCount: displayItems.length,
+                                        separatorBuilder: (_, _) => const SizedBox(
+                                          height: 12,
+                                        ),
+                                        itemBuilder: (context, idx) {
+                                          final item = displayItems[idx];
+                                          if (item == null) {
+                                            return Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.blue.shade100,
+                                                ),
+                                                boxShadow: const [
+                                                  BoxShadow(
+                                                    color: Colors.black12,
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ListTile(
+                                                leading: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.my_location,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                title: const Text(
+                                                  'Lokasi Sekarang',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                subtitle: _isEstimating
+                                                    ? Row(
+                                                        children: const [
+                                                          SizedBox(
+                                                            width: 16,
+                                                            height: 16,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Text('Estimating...'),
+                                                        ],
+                                                      )
+                                                    : null,
+                                                trailing: const SizedBox.shrink(),
+                                              ),
+                                            );
+                                          }
+
+                                          final entry = item;
+                                          final p = entry.value;
+                                          final originalIdx = entry.key;
+                                          int estimatedTime = 0;
+                                          if (_segmentResults.isNotEmpty &&
+                                              originalIdx < _segmentResults.length) {
+                                            estimatedTime =
+                                                (_segmentResults[originalIdx]
+                                                            .cumulative /
+                                                        60)
+                                                    .round();
+                                          }
+
+                                          return Card(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation: 2,
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 4, vertical: 4),
+                                              child: ListTile(
+                                                contentPadding: const EdgeInsets.symmetric(
+                                                    horizontal: 8, vertical: 4),
+                                                leading: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green.shade50,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    p == _routePoints.last
+                                                        ? Icons.flag
+                                                        : Icons.house_siding,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  p.name != null && p.name!.isNotEmpty
+                                                      ? p.name!
+                                                      : 'Pos ${currentLocation != null ? idx : idx + 1}',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                subtitle: _isEstimating
+                                                    ? Row(
+                                                        children: const [
+                                                          SizedBox(
+                                                            width: 16,
+                                                            height: 16,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Text('Estimating...'),
+                                                        ],
+                                                      )
+                                                    : null,
+                                                trailing: Text(
+                                                  'Estimasi waktu: $estimatedTime menit',
+                                                  style: const TextStyle(
+                                                    color: Colors.green,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                onTap: () {
+                                                  mapController.move(
+                                                      LatLng(p.lat, p.lon), 17);
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       );
-                                    },
-                                  );
-                                }),
+                                    }),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        ),
 
                     ValueListenableBuilder<double>(
-                      valueListenable: _sheetHeight,
-                      builder: (context, height, child) {
+                      valueListenable: _sheetExtent,
+                      builder: (context, extent, child) {
+                        final height = bodyHeight * extent;
                         return Positioned(
                           right: 20,
                           bottom: height + 20,
@@ -766,7 +763,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                   ],
                 );
               },
-            ),
-    );
+            );
+          }
+        )
+      );
   }
 }
