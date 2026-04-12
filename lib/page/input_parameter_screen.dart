@@ -39,10 +39,7 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
         elevation: 0,
         title: const Text(
           'Input Parameter',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -62,17 +59,19 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.green[200]!),
                 ),
-                padding: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 10),
+                padding: const EdgeInsets.only(
+                  top: 10,
+                  left: 16,
+                  right: 16,
+                  bottom: 10,
+                ),
                 width: double.infinity,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Jalur yang dipilih:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -112,6 +111,9 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Contoh: 70',
+                    hintStyle: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.25), // bisa ubah ke grey[500], grey[400], dll
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -149,6 +151,9 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Contoh: 15',
+                    hintStyle: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.25), // bisa ubah ke grey[500], grey[400], dll
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),

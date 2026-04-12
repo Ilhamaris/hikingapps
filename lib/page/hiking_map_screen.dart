@@ -41,6 +41,7 @@ class HikingMapScreen extends StatefulWidget {
 
 class _HikingMapScreenState extends State<HikingMapScreen> {
   late MapController mapController;
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
   LatLng? currentLocation;
   StreamSubscription<LatLng>? _locationSubscription;
 
@@ -230,6 +231,15 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(32)),
       );
     });
+  }
+
+  void _onMapPositionChanged(MapPosition position, bool hasGesture) {
+    if (!hasGesture) return;
+    _sheetController.animateTo(
+      0.2,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
   }
 
   Future<void> _saveClimbingHistory() async {
@@ -427,9 +437,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                   children: [
                     FlutterMap(
                       mapController: mapController,
-                      options: const MapOptions(
+                      options: MapOptions(
                         initialCenter: LatLng(0, 0),
                         initialZoom: 13,
+                        onPositionChanged: _onMapPositionChanged,
                       ),
                       children: [
                         TileLayer(
@@ -485,7 +496,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                     ),
 
                     DraggableScrollableSheet(
-                      initialChildSize: 0.2,
+                      controller: _sheetController,
+                      initialChildSize: 0.5,
                       minChildSize: 0.2,
                       maxChildSize: 0.85,
                       builder: (context, scrollController) {
