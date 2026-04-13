@@ -41,7 +41,8 @@ class HikingMapScreen extends StatefulWidget {
 
 class _HikingMapScreenState extends State<HikingMapScreen> {
   late MapController mapController;
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
   final ValueNotifier<double> _sheetExtent = ValueNotifier(0.5);
   LatLng? currentLocation;
   StreamSubscription<LatLng>? _locationSubscription;
@@ -138,9 +139,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     } catch (e) {
       debugPrint('Inference init failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Inference init error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Inference init error: $e')));
       }
     }
   }
@@ -173,9 +174,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     } catch (e) {
       debugPrint('Estimation processing failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Estimation error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Estimation error: $e')));
       }
     } finally {
       _isEstimating = false;
@@ -190,23 +191,34 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         widget.mountain.id,
         widget.route.id,
       );
-      
+
       if (mountainRoute != null && mountainRoute.points.isNotEmpty) {
         pts = mountainRoute.points;
-        debugPrint('route loader: loaded ${pts.length} points from ${widget.mountain.id}/${widget.route.id}');
+        debugPrint(
+          'route loader: loaded ${pts.length} points from ${widget.mountain.id}/${widget.route.id}',
+        );
       } else {
-        debugPrint('route loader: ${widget.mountain.id}/${widget.route.id} contained no points');
+        debugPrint(
+          'route loader: ${widget.mountain.id}/${widget.route.id} contained no points',
+        );
       }
     } catch (e, st) {
-      debugPrint('failed to load route ${widget.mountain.id}/${widget.route.id}: $e');
+      debugPrint(
+        'failed to load route ${widget.mountain.id}/${widget.route.id}: $e',
+      );
       debugPrint('$st');
-      
+
       // fallback to default route
       try {
-        final fallbackRoute = await MountainLoader.loadRoute('glonggong', 'route_glonggong_mlaten.json');
+        final fallbackRoute = await MountainLoader.loadRoute(
+          'glonggong',
+          'route_glonggong_mlaten.json',
+        );
         if (fallbackRoute != null) {
           pts = fallbackRoute.points;
-          debugPrint('fallback loader: loaded ${pts.length} points from glonggong/route_glonggong_mlaten.json');
+          debugPrint(
+            'fallback loader: loaded ${pts.length} points from glonggong/route_glonggong_mlaten.json',
+          );
         }
       } catch (e, st) {
         debugPrint('fallback load also failed: $e');
@@ -298,12 +310,13 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         // Only add final segment if the last post is not already the summit
         if (lastPostIdx != summitIdx) {
           int finalSegmentMinutes = 0;
-          if (_segmentResults.isNotEmpty && lastPostIdx < _segmentResults.length) {
+          if (_segmentResults.isNotEmpty &&
+              lastPostIdx < _segmentResults.length) {
             if (summitIdx < _segmentResults.length) {
-              final postTime =
-                  (_segmentResults[lastPostIdx].cumulative / 60).round();
-              final summitTime =
-                  (_segmentResults[summitIdx].cumulative / 60).round();
+              final postTime = (_segmentResults[lastPostIdx].cumulative / 60)
+                  .round();
+              final summitTime = (_segmentResults[summitIdx].cumulative / 60)
+                  .round();
               finalSegmentMinutes = summitTime - postTime;
             }
           }
@@ -351,7 +364,11 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           ),
         );
         // Navigate to history page after saving
-        Navigator.pushNamedAndRemoveUntil(context, '/history', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/history',
+          (route) => false,
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -364,10 +381,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       debugPrint('Error saving climbing history: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -567,164 +581,189 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                     ),
                                   ),
                                   Expanded(
-                                    child: Builder(builder: (context) {
-                                      final List<MapEntry<int, RoutePoint>?> displayItems = [];
-                                      if (currentLocation != null) {
-                                        displayItems.add(null);
-                                      }
-                                      for (var e in postsWithIndex) {
-                                        displayItems.add(e);
-                                      }
+                                    child: Builder(
+                                      builder: (context) {
+                                        final List<MapEntry<int, RoutePoint>?>
+                                        displayItems = [];
+                                        if (currentLocation != null) {
+                                          displayItems.add(null);
+                                        }
+                                        for (var e in postsWithIndex) {
+                                          displayItems.add(e);
+                                        }
 
-                                      return ListView.separated(
-                                        controller: scrollController,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 8),
-                                        itemCount: displayItems.length,
-                                        separatorBuilder: (_, _) => const SizedBox(
-                                          height: 12,
-                                        ),
-                                        itemBuilder: (context, idx) {
-                                          final item = displayItems[idx];
-                                          if (item == null) {
-                                            return Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue.shade50,
+                                        return ListView.separated(
+                                          controller: scrollController,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 8,
+                                          ),
+                                          itemCount: displayItems.length,
+                                          separatorBuilder: (_, _) =>
+                                              const SizedBox(height: 12),
+                                          itemBuilder: (context, idx) {
+                                            final item = displayItems[idx];
+                                            if (item == null) {
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Colors.blue.shade100,
+                                                  ),
+                                                  boxShadow: const [
+                                                    BoxShadow(
+                                                      color: Colors.black12,
+                                                      blurRadius: 4,
+                                                      offset: Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: ListTile(
+                                                  leading: Container(
+                                                    width: 40,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.blue,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.my_location,
+                                                      color: Colors.white,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                  title: const Text(
+                                                    'Lokasi Sekarang',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                  subtitle: _isEstimating
+                                                      ? Row(
+                                                          children: const [
+                                                            SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ),
+                                                            ),
+                                                            SizedBox(width: 8),
+                                                            Text(
+                                                              'Estimating...',
+                                                            ),
+                                                          ],
+                                                        )
+                                                      : null,
+                                                  trailing:
+                                                      const SizedBox.shrink(),
+                                                ),
+                                              );
+                                            }
+
+                                            final entry = item;
+                                            final p = entry.value;
+                                            final originalIdx = entry.key;
+                                            int estimatedTime = 0;
+                                            if (_segmentResults.isNotEmpty &&
+                                                originalIdx <
+                                                    _segmentResults.length) {
+                                              estimatedTime =
+                                                  (_segmentResults[originalIdx]
+                                                              .cumulative /
+                                                          60)
+                                                      .round();
+                                            }
+
+                                            return Card(
+                                              shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.blue.shade100,
-                                                ),
-                                                boxShadow: const [
-                                                  BoxShadow(
-                                                    color: Colors.black12,
-                                                    blurRadius: 4,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
                                               ),
-                                              child: ListTile(
-                                                leading: Container(
-                                                  width: 40,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.blue,
-                                                    shape: BoxShape.circle,
+                                              elevation: 2,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 4,
+                                                    ),
+                                                child: ListTile(
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4,
+                                                      ),
+                                                  leading: Container(
+                                                    width: 40,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.green.shade50,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      p == _routePoints.last
+                                                          ? Icons.flag
+                                                          : Icons.house_siding,
+                                                      color: Colors.green,
+                                                    ),
                                                   ),
-                                                  child: const Icon(
-                                                    Icons.my_location,
-                                                    color: Colors.white,
-                                                    size: 20,
+                                                  title: Text(
+                                                    p.name != null &&
+                                                            p.name!.isNotEmpty
+                                                        ? p.name!
+                                                        : 'Pos ${currentLocation != null ? idx : idx + 1}',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                                   ),
-                                                ),
-                                                title: const Text(
-                                                  'Lokasi Sekarang',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                subtitle: _isEstimating
-                                                    ? Row(
-                                                        children: const [
-                                                          SizedBox(
-                                                            width: 16,
-                                                            height: 16,
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                              strokeWidth: 2,
+                                                  subtitle: _isEstimating
+                                                      ? Row(
+                                                          children: const [
+                                                            SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ),
                                                             ),
-                                                          ),
-                                                          SizedBox(width: 8),
-                                                          Text('Estimating...'),
-                                                        ],
-                                                      )
-                                                    : null,
-                                                trailing: const SizedBox.shrink(),
+                                                            SizedBox(width: 8),
+                                                            Text(
+                                                              'Estimating...',
+                                                            ),
+                                                          ],
+                                                        )
+                                                      : null,
+                                                  trailing: Text(
+                                                    'Estimasi waktu: $estimatedTime menit',
+                                                    style: const TextStyle(
+                                                      color: Colors.green,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 15,
+                                                    ),
+                                                  ),
+                                                  onTap: () {
+                                                    mapController.move(
+                                                      LatLng(p.lat, p.lon),
+                                                      17,
+                                                    );
+                                                  },
+                                                ),
                                               ),
                                             );
-                                          }
-
-                                          final entry = item;
-                                          final p = entry.value;
-                                          final originalIdx = entry.key;
-                                          int estimatedTime = 0;
-                                          if (_segmentResults.isNotEmpty &&
-                                              originalIdx < _segmentResults.length) {
-                                            estimatedTime =
-                                                (_segmentResults[originalIdx]
-                                                            .cumulative /
-                                                        60)
-                                                    .round();
-                                          }
-
-                                          return Card(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            elevation: 2,
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 4, vertical: 4),
-                                              child: ListTile(
-                                                contentPadding: const EdgeInsets.symmetric(
-                                                    horizontal: 8, vertical: 4),
-                                                leading: Container(
-                                                  width: 40,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green.shade50,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(
-                                                    p == _routePoints.last
-                                                        ? Icons.flag
-                                                        : Icons.house_siding,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                                title: Text(
-                                                  p.name != null && p.name!.isNotEmpty
-                                                      ? p.name!
-                                                      : 'Pos ${currentLocation != null ? idx : idx + 1}',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                subtitle: _isEstimating
-                                                    ? Row(
-                                                        children: const [
-                                                          SizedBox(
-                                                            width: 16,
-                                                            height: 16,
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                            ),
-                                                          ),
-                                                          SizedBox(width: 8),
-                                                          Text('Estimating...'),
-                                                        ],
-                                                      )
-                                                    : null,
-                                                trailing: Text(
-                                                  'Estimasi waktu: $estimatedTime menit',
-                                                  style: const TextStyle(
-                                                    color: Colors.green,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 15,
-                                                  ),
-                                                ),
-                                                onTap: () {
-                                                  mapController.move(
-                                                      LatLng(p.lat, p.lon), 17);
-                                                },
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    }),
+                                          },
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ],
                               ),
@@ -732,40 +771,40 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                           },
                         ),
 
-                    ValueListenableBuilder<double>(
-                      valueListenable: _sheetExtent,
-                      builder: (context, extent, child) {
-                        final height = bodyHeight * extent;
-                        return Positioned(
-                          right: 20,
-                          bottom: height + 20,
-                          child: FloatingActionButton(
-                            heroTag: 'loc_main_btn',
-                            backgroundColor: Colors.green,
-                            onPressed: () {
-                              if (currentLocation != null) {
-                                mapController.move(currentLocation!, 17);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.',
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: const Icon(Icons.my_location),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                        ValueListenableBuilder<double>(
+                          valueListenable: _sheetExtent,
+                          builder: (context, extent, child) {
+                            final height = bodyHeight * extent;
+                            return Positioned(
+                              right: 20,
+                              bottom: height + 20,
+                              child: FloatingActionButton(
+                                heroTag: 'loc_main_btn',
+                                backgroundColor: Colors.green,
+                                onPressed: () {
+                                  if (currentLocation != null) {
+                                    mapController.move(currentLocation!, 17);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Icon(Icons.my_location),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
-            );
-          }
-        )
-      );
+            ),
+    );
   }
 }
