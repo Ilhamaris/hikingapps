@@ -25,6 +25,7 @@ class _MountainListScreenState extends State<MountainListScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
+      // AppBar (header) dengan judul dan tombol kembali
       appBar: AppBar(
         backgroundColor: Colors.green,
         elevation: 0,
@@ -40,6 +41,7 @@ class _MountainListScreenState extends State<MountainListScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      // Body utama yang menampilkan daftar gunung dengan FutureBuilder untuk menangani data asinkron
       body: FutureBuilder<List<Mountain>>(
         future: _mountainsFuture,
         builder: (context, snapshot) {
@@ -66,8 +68,7 @@ class _MountainListScreenState extends State<MountainListScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // Field pencarian sederhana yang belum terhubung ke logika
-                // filter, hanya sebagai placeholder antarmuka.
+                // Field pencarian untuk mencari gunung berdasarkan nama
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(

@@ -49,6 +49,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
   // points loaded from JSON
   List<RoutePoint> _routePoints = [];
+  int _routeStartIndex = 0;
   bool isLoading = true;
 
   // inference service and results
@@ -80,18 +81,30 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         setState(() {
           currentLocation = loc;
           isLoading = false;
+          _routeStartIndex = _findNearestRouteStartIndex();
         });
         // ensure camera adjusts once map is visible
         if (_routePoints.isNotEmpty) {
           _fitToRoute();
         }
+        if (_routePoints.isNotEmpty && _isInferenceInitialized) {
+          _attemptEstimation();
+        }
       }
 
       _locationSubscription = LocationService.getLocationStream().listen((loc) {
-        if (mounted) {
-          setState(() {
-            currentLocation = loc;
-          });
+        if (!mounted) return;
+
+        final newStartIndex = _findNearestRouteStartIndex(loc);
+        final startIndexChanged = newStartIndex != _routeStartIndex;
+
+        setState(() {
+          currentLocation = loc;
+          _routeStartIndex = newStartIndex;
+        });
+
+        if (startIndexChanged && _routePoints.isNotEmpty && _isInferenceInitialized) {
+          _attemptEstimation();
         }
       }, onError: (_) {});
     } catch (_) {
@@ -152,23 +165,46 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     _isEstimating = true;
 
     try {
-      // convert route points to raw segment maps
-      final rawSegments = _routePoints.map((p) {
-        return {
-          'delta_dist_m': p.deltaDist,
-          'delta_elev_m': p.deltaElev,
-          'slope_deg': p.slopeDeg,
-        };
-      }).toList();
+      _routeStartIndex = _findNearestRouteStartIndex();
 
-      final results = _inferenceService.processSegments(
-        rawSegments,
-        widget.bodyWeight,
-        widget.bagWeight,
-      );
+      final startSegmentIndex = _routeStartIndex == 0 ? 0 : _routeStartIndex + 1;
+      final rawSegments = <Map<String, dynamic>>[];
+
+      for (int i = startSegmentIndex; i < _routePoints.length; i++) {
+        final point = _routePoints[i];
+        rawSegments.add({
+          'delta_dist_m': point.deltaDist,
+          'delta_elev_m': point.deltaElev,
+          'slope_deg': point.slopeDeg,
+        });
+      }
+
+      final remainingResults = rawSegments.isNotEmpty
+          ? _inferenceService.processSegments(
+              rawSegments,
+              widget.bodyWeight,
+              widget.bagWeight,
+            )
+          : <SegmentResult>[];
+
+      final paddedResults = <SegmentResult>[];
+      if (_routeStartIndex > 0) {
+        paddedResults.addAll(
+          List<SegmentResult>.generate(
+            _routeStartIndex + 1,
+            (_) => SegmentResult(
+              label: 'Skipped',
+              predicted: 0.0,
+              cumulative: 0.0,
+            ),
+          ),
+        );
+      }
+      paddedResults.addAll(remainingResults);
+
       if (mounted) {
         setState(() {
-          _segmentResults = results;
+          _segmentResults = paddedResults;
         });
       }
     } catch (e) {
@@ -250,6 +286,64 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     });
   }
 
+  int _findNearestRouteStartIndex([LatLng? location]) {
+    if (location == null && currentLocation == null) return 0;
+    if (_routePoints.isEmpty) return 0;
+
+    final reference = location ?? currentLocation!;
+    final distance = Distance();
+    int nearestIndex = 0;
+    double nearestMeters = double.infinity;
+
+    for (int i = 0; i < _routePoints.length; i++) {
+      final point = _routePoints[i];
+      final d = distance.as(
+        LengthUnit.Meter,
+        reference,
+        LatLng(point.lat, point.lon),
+      );
+      if (d < nearestMeters) {
+        nearestMeters = d;
+        nearestIndex = i;
+      }
+    }
+
+    return nearestIndex;
+  }
+
+  void _showContactPersonDialog() {
+    final contactPerson = widget.route.contactPerson;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 8, 0),
+          title: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Kontak Person',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          content: Text(
+            contactPerson != null && contactPerson.isNotEmpty
+                ? contactPerson
+                : 'Informasi kontak tidak tersedia.',
+          ),
+        );
+      },
+    );
+  }
+
   void _onMapPositionChanged(MapPosition position, bool hasGesture) {
     if (!hasGesture) return;
     _sheetController.animateTo(
@@ -270,7 +364,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       final postsWithIndex = _routePoints
           .asMap()
           .entries
-          .where((e) => e.value.name != null && e.value.name!.isNotEmpty)
+          .where((e) =>
+              e.key >= _routeStartIndex &&
+              (e.key == _routeStartIndex ||
+                  (e.value.name != null && e.value.name!.isNotEmpty)))
           .toList();
 
       // Add segments between consecutive waypoints (posts)
@@ -279,6 +376,11 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         final toIdx = postsWithIndex[i + 1].key;
         final fromPoint = postsWithIndex[i].value;
         final toPoint = postsWithIndex[i + 1].value;
+
+        final fromLabel = fromIdx == _routeStartIndex && currentLocation != null
+            ? 'Current Location'
+            : fromPoint.name ?? 'Pos $fromIdx';
+        final toLabel = toPoint.name ?? 'Pos $toIdx';
 
         // Calculate segment time: time to reach toIdx - time to reach fromIdx
         int segmentMinutes = 0;
@@ -292,8 +394,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
         segments.add(
           RouteSegment(
-            from: fromPoint.name ?? 'Pos $i',
-            to: toPoint.name ?? 'Pos ${i + 1}',
+            from: fromLabel,
+            to: toLabel,
             estimatedTime: Duration(minutes: segmentMinutes),
           ),
         );
@@ -778,23 +880,56 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                             return Positioned(
                               right: 20,
                               bottom: height + 20,
-                              child: FloatingActionButton(
-                                heroTag: 'loc_main_btn',
-                                backgroundColor: Colors.green,
-                                onPressed: () {
-                                  if (currentLocation != null) {
-                                    mapController.move(currentLocation!, 17);
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.',
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    width: 48,
+                                    height: 48,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 6,
+                                          offset: Offset(0, 2),
                                         ),
+                                      ],
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.info,
+                                        color: Colors.green,
                                       ),
-                                    );
-                                  }
-                                },
-                                child: const Icon(Icons.my_location),
+                                      onPressed: _showContactPersonDialog,
+                                    ),
+                                  ),
+                                  FloatingActionButton(
+                                    heroTag: 'loc_main_btn',
+                                    backgroundColor: Colors.green,
+                                    onPressed: () {
+                                      if (currentLocation != null) {
+                                        mapController.move(
+                                          currentLocation!,
+                                          17,
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Icon(Icons.my_location),
+                                  ),
+                                ],
                               ),
                             );
                           },

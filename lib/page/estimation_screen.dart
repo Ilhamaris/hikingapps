@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../models/segment_result.dart';
 import '../services/inference_service.dart';
 import '../widgets/estimation_bottom_sheet.dart';
 
-/// Screen for testing the complete inference pipeline
+/// Screen for testing the complete inference pipeline using
+/// route segments from assets folder
 class EstimationScreen extends StatefulWidget {
   const EstimationScreen({super.key});
 
@@ -45,7 +48,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     }
   }
 
-  // Fungsi ini memicu pemrosesan beberapa segmen contoh melalui
+  // Fungsi ini memicu pemrosesan segmen dari file JSON di assets
   // layanan inference. Digunakan untuk menguji pipeline tanpa
   // menavigasi melalui peta.
   Future<void> _processTestSegments() async {
@@ -58,49 +61,16 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
     setState(() {
       _isProcessing = true;
-      _statusMessage = 'Processing segments...';
+      _statusMessage = 'Loading segments from assets...';
     });
 
     try {
-      // Sample segment data
-      final testSegments = [
-        {
-          'lat': -7.549114,
-          'lon': 111.567498,
-          'elev': 54.5,
-          'delta_dist_m': 1.1245212523,
-          'delta_elev_m': 0.0,
-          'slope_rad': 0.0,
-          'slope_deg': 0.0,
-        },
-        {
-          'lat': -7.549200,
-          'lon': 111.567600,
-          'elev': 55.2,
-          'delta_dist_m': 1.5,
-          'delta_elev_m': 0.7,
-          'slope_rad': 0.15,
-          'slope_deg': 8.5,
-        },
-        {
-          'lat': -7.549300,
-          'lon': 111.567700,
-          'elev': 56.5,
-          'delta_dist_m': 2.0,
-          'delta_elev_m': 1.3,
-          'slope_rad': 0.33,
-          'slope_deg': 18.9,
-        },
-        {
-          'lat': -7.549400,
-          'lon': 111.567800,
-          'elev': 58.0,
-          'delta_dist_m': 1.8,
-          'delta_elev_m': 1.5,
-          'slope_rad': 0.40,
-          'slope_deg': 22.6,
-        },
-      ];
+      // Load segments from assets
+      final segments = await _loadSegmentsFromAssets();
+
+      if (segments.isEmpty) {
+        throw Exception('No segments found in assets');
+      }
 
       // Test values for body weight and load weight
       const double bodyWeight = 70.0; // kg
@@ -108,7 +78,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
       // Process segments
       final results = _inferenceService.processSegments(
-        testSegments,
+        segments,
         bodyWeight,
         loadWeight,
       );
@@ -130,6 +100,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
           SnackBar(content: Text('Error: $e')),
         );
       }
+    }
+  }
+
+  // Load trail segments from assets folder
+  Future<List<Map<String, dynamic>>> _loadSegmentsFromAssets() async {
+    try {
+      final jsonString = await DefaultAssetBundle.of(context)
+          .loadString('routes/glonggong/mongkrang/route_segments.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.cast<Map<String, dynamic>>();
+    } catch (e) {
+      throw Exception('Failed to load segments: $e');
     }
   }
 
@@ -240,7 +222,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         ),
                         const SizedBox(height: 24),
                         const Text(
-                          'Test Data',
+                          'Route Data',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -252,7 +234,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Text(
-                              'Ready to process 4 sample trail segments with varying elevation and slope characteristics.',
+                              'Segments will be loaded from assets/routes/glonggong/mongkrang/route_segments.json',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade700,

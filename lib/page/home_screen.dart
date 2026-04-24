@@ -24,16 +24,18 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
+              // Konten header dengan ikon dan teks
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
+                      // Ikon gunung di dalam kotak dengan latar belakang transparan
                       Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -43,6 +45,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // Teks judul dan deskripsi singkat di samping ikon
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -69,6 +72,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+            // Spasi vertikal antara header dan konten
             const SizedBox(height: 24),
             // Bagian konten berisikan beberapa pilihan fitur dalam bentuk
             // kartu mudah diketuk (card). Setiap kartu membawa pengguna ke
@@ -134,10 +138,7 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.chevron_right, color: Colors.grey[400]),
                         ],
                       ),
                     ),
@@ -200,10 +201,7 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.chevron_right, color: Colors.grey[400]),
                         ],
                       ),
                     ),

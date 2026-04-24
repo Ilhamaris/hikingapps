@@ -3,5 +3,11 @@
   "elevation": 2194,
   "province": "Jawa Tengah",
   "description": "Gunung populer di selatan Gunung Lawu yang terkenal dengan sabana ilalang, pemandangan Gunung Lawu, dan jalur pendakian ramah untuk pemula",
-  "routes": []
+  "routes": [
+    {
+      "file": "Mongkrang_Peak.json",
+      "name": "Puncak Mongkrang",
+      "contact_person": "098712345432"
+    }
+  ]
 }

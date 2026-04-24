@@ -35,8 +35,11 @@ flutter:
     - assets/routes/glonggong/metadata.json
     - assets/routes/glonggong/rute/route_glonggong_mlaten.json
     - assets/routes/glonggong/rute/route_glonggong_mlaten2.json
+    - assets/routes/glonggong/rute/PNM-Gulun.json
     
     - assets/routes/mongkrang/metadata.json
+    - assets/routes/mongkrang/rute/Mongkrang_Peak.json
+    
     - assets/models/
     - assets/models/linear_regression.tflite
 

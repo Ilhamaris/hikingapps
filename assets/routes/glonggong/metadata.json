@@ -1,16 +1,18 @@
 {
-    "mountain_name": "Gunung Glonggong",
+    "mountain_name": "Gunung Uji Coba",
     "elevation": 600,
     "province": "Jawa Timur",
     "description": "Data Jalur Uji Coba",
     "routes": [
       {
         "file": "route_glonggong_mlaten.json",
-        "name": "Glonggong - Mlaten"
+        "name": "Glonggong - Mlaten",
+        "contact_person": "098712345432"
       },
       {
-        "file": "route_glonggong_mlaten2.json",
-        "name": "Mlaten - Plumpung"
+        "file": "PNM-Gulun.json",
+        "name": "PNM - Lap. Gulun",
+        "contact_person": "000000000000"
       }
     ]
   }

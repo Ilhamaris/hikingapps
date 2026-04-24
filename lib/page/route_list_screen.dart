@@ -59,6 +59,7 @@ class _RouteListScreenState extends State<RouteListScreen> {
           name: routeInfo.name,
           distance: distanceKm,
           waypoints: waypoints,
+          contactPerson: routeInfo.contactPerson,
         ),
       );
     }
@@ -124,7 +125,11 @@ class _RouteListScreenState extends State<RouteListScreen> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+                      padding: const EdgeInsets.only(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                      ),
                       child: Container(
                         width: double.infinity,
                         decoration: BoxDecoration(

@@ -8,6 +8,8 @@ class HikingRoute {
   final double distance;
   // Daftar titik waypoint yang dilalui dalam rute
   final List<String> waypoints;
+  // Kontak person untuk rute ini.
+  final String? contactPerson;
 
   // Konstruktor untuk menginisialisasi semua properti rute pendakian
   HikingRoute({
@@ -15,5 +17,6 @@ class HikingRoute {
     required this.name,
     required this.distance,
     required this.waypoints,
+    this.contactPerson,
   });
 }

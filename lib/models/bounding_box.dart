@@ -27,11 +27,7 @@ class BoundingBox {
   // Getter untuk mendapatkan tinggi area dalam derajat
   double get height => north - south;
 
-  /// Mengubah BoundingBox menjadi objek `LatLngBounds` dari
-  /// paket flutter_map/latlong2.
-  ///
-  /// Konversi ini diperlukan agar bounding box dapat langsung digunakan
-  /// untuk mengatur tampilan peta (misalnya `MapController.fitBounds`).
+ // membuat kotak LatLngBounds dari BoundingBox
   LatLngBounds toLatLngBounds() {
     return LatLngBounds(
       LatLng(south, west),

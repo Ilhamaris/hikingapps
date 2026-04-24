@@ -53,7 +53,7 @@ class MountainLoader {
         location: metadata.province,
         elevation: metadata.elevation.toDouble(),
         description: metadata.description,
-        imagePath: 'assets/images/icon.png', // Path gambar default.
+        // imagePath: 'assets/images/icon.png', // Path gambar default.
       );
     } catch (e) {
       debugPrint('Failed to load mountain $mountainFolder: $e');
