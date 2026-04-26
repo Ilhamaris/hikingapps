@@ -45,6 +45,8 @@ class LocationService {
         accuracy: accuracy,
         distanceFilter: distanceFilter,
       ),
-    ).map((position) => LatLng(position.latitude, position.longitude)); // Mengubah posisi ke LatLng
+    ).map(
+      (position) => LatLng(position.latitude, position.longitude),
+    ); // Mengubah posisi ke LatLng
   }
 }

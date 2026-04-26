@@ -103,7 +103,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           _routeStartIndex = newStartIndex;
         });
 
-        if (startIndexChanged && _routePoints.isNotEmpty && _isInferenceInitialized) {
+        if (startIndexChanged &&
+            _routePoints.isNotEmpty &&
+            _isInferenceInitialized) {
           _attemptEstimation();
         }
       }, onError: (_) {});
@@ -167,7 +169,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     try {
       _routeStartIndex = _findNearestRouteStartIndex();
 
-      final startSegmentIndex = _routeStartIndex == 0 ? 0 : _routeStartIndex + 1;
+      final startSegmentIndex = _routeStartIndex == 0
+          ? 0
+          : _routeStartIndex + 1;
       final rawSegments = <Map<String, dynamic>>[];
 
       for (int i = startSegmentIndex; i < _routePoints.length; i++) {
@@ -321,10 +325,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           title: Row(
             children: [
               const Expanded(
-                child: Text(
-                  'Kontak Person',
-                  style: TextStyle(fontSize: 20),
-                ),
+                child: Text('Kontak Person', style: TextStyle(fontSize: 20)),
               ),
               IconButton(
                 padding: EdgeInsets.zero,
@@ -364,10 +365,12 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       final postsWithIndex = _routePoints
           .asMap()
           .entries
-          .where((e) =>
-              e.key >= _routeStartIndex &&
-              (e.key == _routeStartIndex ||
-                  (e.value.name != null && e.value.name!.isNotEmpty)))
+          .where(
+            (e) =>
+                e.key >= _routeStartIndex &&
+                (e.key == _routeStartIndex ||
+                    (e.value.name != null && e.value.name!.isNotEmpty)),
+          )
           .toList();
 
       // Add segments between consecutive waypoints (posts)
@@ -685,14 +688,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                   Expanded(
                                     child: Builder(
                                       builder: (context) {
-                                        final List<MapEntry<int, RoutePoint>?>
-                                        displayItems = [];
-                                        if (currentLocation != null) {
-                                          displayItems.add(null);
-                                        }
-                                        for (var e in postsWithIndex) {
-                                          displayItems.add(e);
-                                        }
+                                        final displayItems = postsWithIndex;
 
                                         return ListView.separated(
                                           controller: scrollController,
@@ -704,71 +700,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                           separatorBuilder: (_, _) =>
                                               const SizedBox(height: 12),
                                           itemBuilder: (context, idx) {
-                                            final item = displayItems[idx];
-                                            if (item == null) {
-                                              return Container(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue.shade50,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.blue.shade100,
-                                                  ),
-                                                  boxShadow: const [
-                                                    BoxShadow(
-                                                      color: Colors.black12,
-                                                      blurRadius: 4,
-                                                      offset: Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: ListTile(
-                                                  leading: Container(
-                                                    width: 40,
-                                                    height: 40,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.blue,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.my_location,
-                                                      color: Colors.white,
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                  title: const Text(
-                                                    'Lokasi Sekarang',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                  subtitle: _isEstimating
-                                                      ? Row(
-                                                          children: const [
-                                                            SizedBox(
-                                                              width: 16,
-                                                              height: 16,
-                                                              child:
-                                                                  CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2,
-                                                                  ),
-                                                            ),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              'Estimating...',
-                                                            ),
-                                                          ],
-                                                        )
-                                                      : null,
-                                                  trailing:
-                                                      const SizedBox.shrink(),
-                                                ),
-                                              );
-                                            }
-
-                                            final entry = item;
+                                            final entry = displayItems[idx];
                                             final p = entry.value;
                                             final originalIdx = entry.key;
                                             int estimatedTime = 0;
