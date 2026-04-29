@@ -131,14 +131,60 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Akhiri Pendakian'),
-          content: const Text('Aapakah anda ingin mengakhiri pendakian?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: const [
+              Icon(
+                Icons.flag_circle_rounded,
+                size: 44,
+                color: Colors.green,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Selesai Mendaki?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Data perjalanan akan disimpan ke riwayat. Akhiri pendakian sekarang?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, height: 1.6),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-            TextButton(
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.green,
+                side: const BorderSide(color: Colors.green),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              ),
               onPressed: () => Navigator.pop(context),
               child: const Text('Tidak'),
             ),
-            TextButton(
+            const SizedBox(width: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+              ),
               onPressed: () async {
                 Navigator.pop(context); // Close dialog
                 await _saveClimbingHistory();
