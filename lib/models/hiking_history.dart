@@ -9,6 +9,7 @@ class HikingHistory {
   final double bodyWeight;
   final double bagWeight;
   final List<RouteSegment> segments;
+  final List<WaypointHistory> waypoints;
 
   HikingHistory({
     required this.id,
@@ -19,6 +20,7 @@ class HikingHistory {
     required this.bodyWeight,
     required this.bagWeight,
     required this.segments,
+    required this.waypoints,
   });
 
   /// Konversi objek menjadi Map JSON untuk penyimpanan atau pengiriman.
@@ -32,6 +34,7 @@ class HikingHistory {
       'bodyWeight': bodyWeight,
       'bagWeight': bagWeight,
       'segments': segments.map((segment) => segment.toJson()).toList(),
+      'waypoints': waypoints.map((waypoint) => waypoint.toJson()).toList(),
     };
   }
 
@@ -48,11 +51,42 @@ class HikingHistory {
       segments: (json['segments'] as List?)
           ?.map((segment) => RouteSegment.fromJson(segment))
           .toList() ?? [],
+      waypoints: (json['waypoints'] as List?)
+          ?.map((waypoint) => WaypointHistory.fromJson(waypoint))
+          .toList() ?? [],
     );
   }
 
   /// Mendapatkan representasi JSON sebagai string.
   String toJsonString() => jsonEncode(toJson());
+}
+
+class WaypointHistory {
+  final String name;
+  final bool isStart;
+  final DateTime time;
+
+  WaypointHistory({
+    required this.name,
+    required this.isStart,
+    required this.time,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isStart': isStart,
+      'time': time.toIso8601String(),
+    };
+  }
+
+  factory WaypointHistory.fromJson(Map<String, dynamic> json) {
+    return WaypointHistory(
+      name: json['name'] ?? '',
+      isStart: json['isStart'] ?? false,
+      time: DateTime.parse(json['time'] ?? DateTime.now().toIso8601String()),
+    );
+  }
 }
 
 /// Subkelas yang menggambarkan satu segmen perjalanan antara dua titik.

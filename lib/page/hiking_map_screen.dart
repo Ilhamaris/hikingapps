@@ -52,6 +52,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   int _routeStartIndex = 0;
   bool isLoading = true;
 
+  // arrival state for route waypoints
+  final Map<int, DateTime> _arrivalTimes = {};
+  static const double _arrivalThresholdMeters = 15.0;
+
   // inference service and results
   late InferenceService _inferenceService;
   bool _isInferenceInitialized = false;
@@ -82,6 +86,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           currentLocation = loc;
           isLoading = false;
           _routeStartIndex = _findNearestRouteStartIndex();
+          if (loc != null) {
+            _updateArrivalTimes(loc);
+          }
         });
         // ensure camera adjusts once map is visible
         if (_routePoints.isNotEmpty) {
@@ -101,6 +108,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         setState(() {
           currentLocation = loc;
           _routeStartIndex = newStartIndex;
+          _updateArrivalTimes(loc);
         });
 
         if (startIndexChanged &&
@@ -269,6 +277,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     if (mounted) {
       setState(() {
         _routePoints = pts;
+        if (currentLocation != null) {
+          _updateArrivalTimes(currentLocation!);
+        }
       });
       _fitToRoute();
       _attemptEstimation();
@@ -288,6 +299,24 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(32)),
       );
     });
+  }
+
+  void _updateArrivalTimes(LatLng location) {
+    if (_routePoints.isEmpty) return;
+    final distance = Distance();
+    for (int i = 0; i < _routePoints.length; i++) {
+      if (_arrivalTimes.containsKey(i)) continue;
+      final point = _routePoints[i];
+      if (point.name == null || point.name!.isEmpty) continue;
+      final meters = distance.as(
+        LengthUnit.Meter,
+        location,
+        LatLng(point.lat, point.lon),
+      );
+      if (meters <= _arrivalThresholdMeters) {
+        _arrivalTimes[i] = DateTime.now();
+      }
+    }
   }
 
   int _findNearestRouteStartIndex([LatLng? location]) {
@@ -443,6 +472,18 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         totalEstimatedTime = Duration(minutes: totalMinutes);
       }
 
+      final reachedWaypoints = _routePoints.asMap().entries
+          .where((e) =>
+              _arrivalTimes.containsKey(e.key) &&
+              e.value.name != null &&
+              e.value.name!.isNotEmpty)
+          .map((e) => WaypointHistory(
+                name: e.value.name ?? 'Pos ${e.key}',
+                isStart: e.key == 0,
+                time: _arrivalTimes[e.key]!,
+              ))
+          .toList();
+
       // Create HikingHistory object
       final history = HikingHistory(
         id: historyId,
@@ -453,6 +494,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         bodyWeight: widget.bodyWeight,
         bagWeight: widget.bagWeight,
         segments: segments,
+        waypoints: reachedWaypoints,
       );
 
       // Save to storage
@@ -714,6 +756,14 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                       .round();
                                             }
 
+                                            final hasArrival = _arrivalTimes.containsKey(originalIdx);
+                                            final arrivalTime = _arrivalTimes[originalIdx];
+                                            final trailingText = hasArrival && arrivalTime != null
+                                                ? originalIdx == 0
+                                                    ? "Berangkat pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                    : "Tiba pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                : 'Estimasi waktu: $estimatedTime menit';
+
                                             return Card(
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
@@ -757,8 +807,13 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                           FontWeight.w700,
                                                     ),
                                                   ),
-                                                  subtitle: _isEstimating
-                                                      ? Row(
+                                                  subtitle: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      if (_isEstimating)
+                                                        Row(
                                                           children: const [
                                                             SizedBox(
                                                               width: 16,
@@ -774,16 +829,17 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                               'Estimating...',
                                                             ),
                                                           ],
-                                                        )
-                                                      : null,
-                                                  trailing: Text(
-                                                    'Estimasi waktu: $estimatedTime menit',
-                                                    style: const TextStyle(
-                                                      color: Colors.green,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 15,
-                                                    ),
+                                                        ),
+                                                      Text(
+                                                        trailingText,
+                                                        style: const TextStyle(
+                                                          color: Colors.green,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 15,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                   onTap: () {
                                                     mapController.move(
