@@ -217,20 +217,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       color: Colors.grey[700],
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Icon(
-                                    Icons.show_chart,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Total Turun: 3j 15m',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
