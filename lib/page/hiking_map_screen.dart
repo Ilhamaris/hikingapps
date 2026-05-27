@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../models/route_point.dart';
+import '../models/bounding_box.dart';
 import '../models/segment_result.dart';
 import '../models/hiking_history.dart';
 import '../services/mountain_loader.dart';
 import '../services/inference_service.dart';
+import '../services/bounding_box_calculator.dart';
 import '../config/tile_config.dart';
 import '../services/location_service.dart';
 import '../services/history_service.dart';
@@ -49,6 +52,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
   // points loaded from JSON
   List<RoutePoint> _routePoints = [];
+  BoundingBox? _routeBoundingBox;
+  bool _isLocationWithinRouteBounds = false;
   int _routeStartIndex = 0;
   bool isLoading = true;
 
@@ -108,6 +113,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         setState(() {
           currentLocation = loc;
           _routeStartIndex = newStartIndex;
+          _isLocationWithinRouteBounds =
+              _routeBoundingBox?.contains(loc) ?? false;
           _updateArrivalTimes(loc);
         });
 
@@ -140,19 +147,12 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: const [
-              Icon(
-                Icons.flag_circle_rounded,
-                size: 44,
-                color: Colors.green,
-              ),
+              Icon(Icons.flag_circle_rounded, size: 44, color: Colors.green),
               SizedBox(height: 16),
               Text(
                 'Selesai Mendaki?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -170,7 +170,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text('Tidak'),
@@ -183,7 +186,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 36,
+                  vertical: 14,
+                ),
               ),
               onPressed: () async {
                 Navigator.pop(context); // Close dialog
@@ -218,6 +224,17 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
   Future<void> _attemptEstimation() async {
     if (!_isInferenceInitialized || _routePoints.isEmpty) return;
     if (_isEstimating) return;
+
+    if (currentLocation != null &&
+        _routeBoundingBox != null &&
+        !_routeBoundingBox!.contains(currentLocation!)) {
+      if (mounted) {
+        setState(() {
+          _segmentResults = [];
+        });
+      }
+      return;
+    }
     _isEstimating = true;
 
     try {
@@ -323,7 +340,17 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     if (mounted) {
       setState(() {
         _routePoints = pts;
+        if (_routePoints.isNotEmpty) {
+          final routePointsLatLng = _routePoints
+              .map((p) => LatLng(p.lat, p.lon))
+              .toList();
+          _routeBoundingBox = BoundingBoxCalculator.calculateBoundingBox(
+            routePointsLatLng,
+          );
+        }
         if (currentLocation != null) {
+          _isLocationWithinRouteBounds =
+              _routeBoundingBox?.contains(currentLocation!) ?? false;
           _updateArrivalTimes(currentLocation!);
         }
       });
@@ -392,15 +419,38 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
   void _showContactPersonDialog() {
     final contactPerson = widget.route.contactPerson;
+    final hasContact = contactPerson != null && contactPerson.isNotEmpty;
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: Colors.grey.shade300, width: 1),
+            borderRadius: BorderRadius.circular(24),
+          ),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 8, 0),
           title: Row(
             children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.green.shade700.withValues(alpha: 0.16),
+                child: Icon(
+                  Icons.contact_emergency_outlined,
+                  color: Colors.green.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
               const Expanded(
-                child: Text('Kontak Person', style: TextStyle(fontSize: 20)),
+                child: Text(
+                  'Kontak Darurat',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                ),
               ),
               IconButton(
                 padding: EdgeInsets.zero,
@@ -410,10 +460,59 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
               ),
             ],
           ),
-          content: Text(
-            contactPerson != null && contactPerson.isNotEmpty
-                ? contactPerson
-                : 'Informasi kontak tidak tersedia.',
+          contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.route.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF212121),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      hasContact
+                          ? contactPerson
+                          : 'Informasi kontak tidak tersedia.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: hasContact
+                            ? Colors.grey[800]
+                            : Theme.of(context).textTheme.bodyMedium?.color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (hasContact)
+                    IconButton(
+                      splashRadius: 22,
+                      splashColor: Colors.green.shade700.withValues(
+                        alpha: 0.18,
+                      ),
+                      highlightColor: Colors.green.shade700.withValues(
+                        alpha: 0.08,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      icon: Icon(Icons.copy, color: Colors.green.shade700),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: contactPerson));
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Nomor telah disalin')),
+                        );
+                      },
+                      tooltip: 'Salin nomor',
+                    ),
+                ],
+              ),
+            ],
           ),
         );
       },
@@ -518,16 +617,22 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         totalEstimatedTime = Duration(minutes: totalMinutes);
       }
 
-      final reachedWaypoints = _routePoints.asMap().entries
-          .where((e) =>
-              _arrivalTimes.containsKey(e.key) &&
-              e.value.name != null &&
-              e.value.name!.isNotEmpty)
-          .map((e) => WaypointHistory(
-                name: e.value.name ?? 'Pos ${e.key}',
-                isStart: e.key == 0,
-                time: _arrivalTimes[e.key]!,
-              ))
+      final reachedWaypoints = _routePoints
+          .asMap()
+          .entries
+          .where(
+            (e) =>
+                _arrivalTimes.containsKey(e.key) &&
+                e.value.name != null &&
+                e.value.name!.isNotEmpty,
+          )
+          .map(
+            (e) => WaypointHistory(
+              name: e.value.name ?? 'Pos ${e.key}',
+              isStart: e.key == 0,
+              time: _arrivalTimes[e.key]!,
+            ),
+          )
           .toList();
 
       // Create HikingHistory object
@@ -778,6 +883,44 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                       builder: (context) {
                                         final displayItems = postsWithIndex;
 
+                                        final showRouteEstimate =
+                                            currentLocation != null &&
+                                            _routeBoundingBox != null &&
+                                            _isLocationWithinRouteBounds;
+
+                                        if (!showRouteEstimate) {
+                                          return ListView(
+                                            controller: scrollController,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                            children: [
+                                              Card(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                elevation: 2,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    16,
+                                                  ),
+                                                  child: Text(
+                                                    'Sorry, the location is not around the route.',
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }
+
                                         return ListView.separated(
                                           controller: scrollController,
                                           padding: const EdgeInsets.symmetric(
@@ -802,12 +945,16 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                       .round();
                                             }
 
-                                            final hasArrival = _arrivalTimes.containsKey(originalIdx);
-                                            final arrivalTime = _arrivalTimes[originalIdx];
-                                            final trailingText = hasArrival && arrivalTime != null
+                                            final hasArrival = _arrivalTimes
+                                                .containsKey(originalIdx);
+                                            final arrivalTime =
+                                                _arrivalTimes[originalIdx];
+                                            final trailingText =
+                                                hasArrival &&
+                                                    arrivalTime != null
                                                 ? originalIdx == 0
-                                                    ? "Berangkat pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
-                                                    : "Tiba pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                      ? "Berangkat pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                      : "Tiba pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
                                                 : 'Estimasi waktu: $estimatedTime menit';
 
                                             return Card(
@@ -855,8 +1002,10 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                   ),
                                                   subtitle: Column(
                                                     crossAxisAlignment:
-                                                        CrossAxisAlignment.start,
-                                                    mainAxisSize: MainAxisSize.min,
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
                                                       if (_isEstimating)
                                                         Row(

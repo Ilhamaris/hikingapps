@@ -27,7 +27,15 @@ class BoundingBox {
   // Getter untuk mendapatkan tinggi area dalam derajat
   double get height => north - south;
 
- // membuat kotak LatLngBounds dari BoundingBox
+  /// Returns true when the given location is inside this bounding box.
+  bool contains(LatLng location) {
+    return location.latitude <= north &&
+        location.latitude >= south &&
+        location.longitude <= east &&
+        location.longitude >= west;
+  }
+
+  // membuat kotak LatLngBounds dari BoundingBox
   LatLngBounds toLatLngBounds() {
     return LatLngBounds(
       LatLng(south, west),

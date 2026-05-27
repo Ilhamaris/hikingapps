@@ -3,11 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/hiking_history.dart';
 
-// Layanan untuk mengelola penyimpanan dan pengambilan data riwayat pendakian.
 // Menggunakan SharedPreferences untuk menyimpan data secara lokal di perangkat.
-// Data disimpan dalam format JSON untuk kemudahan serialisasi.
 class HistoryService {
-  // Kunci unik untuk menyimpan data riwayat di SharedPreferences.
   // Semua data riwayat disimpan dalam satu string JSON.
   static const String _storageKey = 'hiking_histories';
 

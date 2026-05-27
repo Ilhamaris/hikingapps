@@ -6,13 +6,13 @@
     "routes": [
       {
         "file": "route_glonggong_mlaten.json",
-        "name": "Glonggong - Mlaten",
-        "contact_person": "098712345432 - Basecamp Glonggong"
+        "name": "Basecamp Glonggong",
+        "contact_person": "098712345432"
       },
       {
         "file": "PNM-Gulun.json",
-        "name": "PNM - Lap. Gulun",
-        "contact_person": "000000000000 - Basecamp PNM"
+        "name": "Basecamp PNM",
+        "contact_person": "086912345432"
       }
     ]
   }

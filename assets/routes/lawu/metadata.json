@@ -1,0 +1,18 @@
+{
+    "mountain_name": "Gunung Lawu",
+    "elevation": 3265,
+    "province": "Jawa Tengah",
+    "description": "Data Jalur Uji Coba",
+    "routes": [
+      {
+        "file": "route_glonggong_mlaten.json",
+        "name": "Glonggong - Mlaten",
+        "contact_person": "098712345432"
+      },
+      {
+        "file": "lawu_via_cetho.json",
+        "name": "Lawu via Cetho",
+        "contact_person": "000000000000"
+      }
+    ]
+  }

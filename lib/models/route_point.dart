@@ -4,21 +4,13 @@
 /// sejak titik sebelumnya (delta distance / elevation) serta nama opsional
 /// jika titik tersebut merupakan waypoint penting.
 class RoutePoint {
-  /// Latitude titik (derajat).
   final double lat;
-  /// Longitude titik (derajat).
   final double lon;
-  /// Elevasi titik dalam meter.
   final double elev;
-  /// Jarak dari titik sebelumnya dalam meter.
   final double deltaDist;
-  /// Perubahan elevasi dari titik sebelumnya dalam meter.
   final double deltaElev;
-  /// Kemiringan (slope) dalam derajat antara titik sebelumnya dan ini.
   final double slopeDeg;
-  /// Jarak kumulatif dari awal rute hingga titik ini (meter).
   final double cumDist;
-  /// Nama opsional (misal "pos 1", "puncak").
   final String? name;
 
   RoutePoint({

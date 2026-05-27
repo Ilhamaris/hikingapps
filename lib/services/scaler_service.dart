@@ -24,13 +24,21 @@ class ScalerService {
   /// Melempar exception jika gagal memuat.
   Future<ScalerModel> loadScaler() async {
     try {
-      debugPrint('╔══════════════════════════════════════════════════════════╗');
-      debugPrint('║         Starting Scaler Loading Process                  ║');
-      debugPrint('╚══════════════════════════════════════════════════════════╝');
+      debugPrint(
+        '╔══════════════════════════════════════════════════════════╗',
+      );
+      debugPrint(
+        '║         Starting Scaler Loading Process                  ║',
+      );
+      debugPrint(
+        '╚══════════════════════════════════════════════════════════╝',
+      );
       debugPrint('📍 Attempting to load: assets/models/scaler_params.json');
 
       // Baca file JSON sebagai string.
-      final jsonString = await rootBundle.loadString('assets/models/scaler_params.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/models/scaler_params.json',
+      );
       // Parse string menjadi map.
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
       // Buat objek ScalerModel dari map.
@@ -41,16 +49,27 @@ class ScalerService {
       debugPrint('   - Mean values: ${_scaler!.mean}');
       debugPrint('   - Std values: ${_scaler!.std}');
       debugPrint('   - Number of features: ${_scaler!.mean.length}');
+      // Additional raw debug prints for explicit parameter inspection.
+      debugPrint('DEBUG: mean = ${_scaler!.mean}');
+      debugPrint('DEBUG: std = ${_scaler!.std}');
 
-      debugPrint('╔══════════════════════════════════════════════════════════╗');
+      debugPrint(
+        '╔══════════════════════════════════════════════════════════╗',
+      );
       debugPrint('║         ✅ Scaler Loading SUCCESSFUL                     ║');
-      debugPrint('╚══════════════════════════════════════════════════════════╝');
+      debugPrint(
+        '╚══════════════════════════════════════════════════════════╝',
+      );
 
       return _scaler!;
     } catch (e) {
-      debugPrint('╔══════════════════════════════════════════════════════════╗');
+      debugPrint(
+        '╔══════════════════════════════════════════════════════════╗',
+      );
       debugPrint('║         ❌ Scaler Loading FAILED                         ║');
-      debugPrint('╚══════════════════════════════════════════════════════════╝');
+      debugPrint(
+        '╚══════════════════════════════════════════════════════════╝',
+      );
       debugPrint('❌ Error: $e');
       debugPrint('📝 Note: Make sure:');
       debugPrint('   1. The file exists at assets/models/scaler_params.json');

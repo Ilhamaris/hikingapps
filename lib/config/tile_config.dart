@@ -1,9 +1,9 @@
-/// Configuration for map tile providers and online tile serving
+/// Konfigurasi untuk penyedia peta dan penyajian daring.
 class TileConfig {
   /// OpenStreetMap tile endpoint
-  /// Free and open-source tile source requiring no API key
+  /// Sumber kode peta gratis dan sumber terbuka yang tidak memerlukan kunci API.
   static const String openStreetMapUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  /// User agent for tile requests
+  /// Pengguna untuk permintaan peta
   static const String userAgent = 'hikingapps/1.0';
 }
