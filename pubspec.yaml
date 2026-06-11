@@ -18,6 +18,8 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
   tflite_flutter: ^0.10.4
   uuid: ^4.0.0
+  sqflite: any
+  path: any
 
 dev_dependencies:
   flutter_test:

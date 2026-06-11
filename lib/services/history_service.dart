@@ -1,114 +1,83 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
 import '../models/hiking_history.dart';
+import 'database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
-// Menggunakan SharedPreferences untuk menyimpan data secara lokal di perangkat.
 class HistoryService {
-  // Semua data riwayat disimpan dalam satu string JSON.
-  static const String _storageKey = 'hiking_histories';
-
-  /// Mengambil semua riwayat pendakian yang tersimpan.
-  /// Mengembalikan daftar kosong jika tidak ada data atau terjadi error.
+  /// Get all histories from SQLite. On first access, migrate SharedPreferences.
   Future<List<HikingHistory>> getAllHistories() async {
     try {
-      // Mengakses penyimpanan lokal perangkat.
-      final prefs = await SharedPreferences.getInstance();
-      // Mengambil string JSON yang menyimpan semua riwayat.
-      final jsonString = prefs.getString(_storageKey);
-
-      // Jika tidak ada data, kembalikan daftar kosong.
-      if (jsonString == null || jsonString.isEmpty) {
-        return [];
-      }
-
-      // Mengubah string JSON menjadi daftar objek dinamis.
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      // Mengubah setiap objek JSON menjadi objek HikingHistory.
-      return jsonList
-          .map((json) => HikingHistory.fromJson(json as Map<String, dynamic>))
-          .toList();
+      await DatabaseService.instance.migrateFromSharedPreferences();
+      final db = await DatabaseService.instance.database;
+      final rows = await db.query('histories', orderBy: 'date DESC');
+      return rows.map((row) {
+        final data = row['data'] as String?;
+        if (data == null || data.isEmpty) return null;
+        final map = jsonDecode(data) as Map<String, dynamic>;
+        return HikingHistory.fromJson(map);
+      }).whereType<HikingHistory>().toList();
     } catch (e) {
-      // Mencetak error untuk debugging, tapi tetap kembalikan daftar kosong.
-      debugPrint('Error loading histories: $e');
+      debugPrint('Error loading histories from DB: $e');
       return [];
     }
   }
 
-  /// Menyimpan riwayat pendakian baru ke penyimpanan.
-  /// Riwayat baru ditambahkan di awal daftar (terbaru di atas).
   Future<bool> saveHistory(HikingHistory history) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      // Ambil semua riwayat yang ada terlebih dahulu.
-      final histories = await getAllHistories();
-
-      // Tambahkan riwayat baru di posisi pertama.
-      histories.insert(0, history);
-
-      // Ubah daftar riwayat menjadi daftar JSON.
-      final jsonList =
-          histories.map((history) => history.toJson()).toList();
-      // Ubah daftar JSON menjadi string untuk disimpan.
-      final jsonString = jsonEncode(jsonList);
-
-      // Simpan string JSON ke penyimpanan.
-      return await prefs.setString(_storageKey, jsonString);
+      final db = await DatabaseService.instance.database;
+      await db.insert(
+        'histories',
+        {
+          'id': history.id,
+          'mountainName': history.mountainName,
+          'routeName': history.routeName,
+          'date': history.date.toIso8601String(),
+          'data': jsonEncode(history.toJson()),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return true;
     } catch (e) {
-      debugPrint('Error saving history: $e');
-      return false; // Gagal menyimpan.
-    }
-  }
-
-  /// Menghapus riwayat pendakian berdasarkan ID.
-  /// Mencari dan menghapus riwayat yang cocok, lalu menyimpan ulang.
-  Future<bool> deleteHistory(String id) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final histories = await getAllHistories();
-
-      // Hapus riwayat yang ID-nya cocok.
-      histories.removeWhere((history) => history.id == id);
-
-      // Simpan daftar yang sudah diperbarui.
-      final jsonList =
-          histories.map((history) => history.toJson()).toList();
-      final jsonString = jsonEncode(jsonList);
-
-      return await prefs.setString(_storageKey, jsonString);
-    } catch (e) {
-      debugPrint('Error deleting history: $e');
+      debugPrint('Error saving history to DB: $e');
       return false;
     }
   }
 
-  /// Mengambil riwayat pendakian tertentu berdasarkan ID.
-  /// Mengembalikan null jika tidak ditemukan.
+  Future<bool> deleteHistory(String id) async {
+    try {
+      final db = await DatabaseService.instance.database;
+      final count = await db.delete('histories', where: 'id = ?', whereArgs: [id]);
+      return count > 0;
+    } catch (e) {
+      debugPrint('Error deleting history from DB: $e');
+      return false;
+    }
+  }
+
   Future<HikingHistory?> getHistory(String id) async {
     try {
-      final histories = await getAllHistories();
-      // Cari riwayat dengan ID yang cocok.
-      for (final history in histories) {
-        if (history.id == id) {
-          return history;
-        }
-      }
-      return null; // Tidak ditemukan.
+      final db = await DatabaseService.instance.database;
+      final rows = await db.query('histories', where: 'id = ?', whereArgs: [id]);
+      if (rows.isEmpty) return null;
+      final data = rows.first['data'] as String?;
+      if (data == null || data.isEmpty) return null;
+      final map = jsonDecode(data) as Map<String, dynamic>;
+      return HikingHistory.fromJson(map);
     } catch (e) {
-      debugPrint('Error getting history: $e');
+      debugPrint('Error getting history from DB: $e');
       return null;
     }
   }
 
-  /// Menghapus semua riwayat pendakian (gunakan dengan hati-hati!).
-  /// Menghapus seluruh data riwayat dari penyimpanan.
   Future<bool> clearAllHistories() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      // Hapus data dengan kunci tertentu.
-      return await prefs.remove(_storageKey);
+      final db = await DatabaseService.instance.database;
+      await db.delete('histories');
+      return true;
     } catch (e) {
-      debugPrint('Error clearing histories: $e');
+      debugPrint('Error clearing histories in DB: $e');
       return false;
     }
   }
