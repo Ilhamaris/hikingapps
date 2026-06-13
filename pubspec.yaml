@@ -50,6 +50,9 @@ flutter:
     - assets/routes/lawu/metadata.json
     - assets/routes/lawu/rute/lawu_via_cetho.json
 
+    - assets/routes/arjuno/metadata.json
+    - assets/routes/arjuno/rute/arjuno_via_purwosari.json
+
     - assets/models/
     - assets/models/linear_regression.tflite
 

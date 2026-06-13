@@ -1,0 +1,18 @@
+{
+    "mountain_name": "Gunung Arjuno",
+    "elevation":3339,
+    "province": "Jawa Timur",
+    "description": "Gunung berapi kerucut tertinggi kedua di Jawa Timur. Terkenal dengan pemandangan dan situs sejarahnya, kawasan ini dikelola Tahura Raden Soerjo.",
+    "routes": [
+      {
+        "file": "route_glonggong_mlaten.json",
+        "name": "Basecamp Glonggong",
+        "contact_person": "098712345432"
+      },
+      {
+        "file": "arjuno_via_purwosari.json",
+        "name": "Arjuno via Purwosari",
+        "contact_person": "086912345432"
+      }
+    ]
+  }
