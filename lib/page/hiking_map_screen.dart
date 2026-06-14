@@ -6,12 +6,11 @@ import 'package:uuid/uuid.dart';
 import '../models/mountain.dart';
 import '../models/hiking_route.dart';
 import '../models/route_point.dart';
-import '../models/bounding_box.dart';
 import '../models/segment_result.dart';
 import '../models/hiking_history.dart';
 import '../services/mountain_loader.dart';
 import '../services/inference_service.dart';
-import '../services/bounding_box_calculator.dart';
+ 
 import '../config/tile_config.dart';
 import '../services/location_service.dart';
 import '../services/history_service.dart';
@@ -19,6 +18,16 @@ import 'dart:async';
 
 // Halaman utama yang menampilkan peta jalur pendakian, posisi
 // pengguna, dan estimasi waktu ke setiap pos berdasarkan model ML.
+
+class _PostSegmentPlan {
+  final List<Map<String, dynamic>> segments;
+  final List<int> endIndices;
+
+  _PostSegmentPlan({
+    required this.segments,
+    required this.endIndices,
+  });
+}
 
 class HikingMapScreen extends StatefulWidget {
   // Data gunung yang dipilih
@@ -52,10 +61,13 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
   // points loaded from JSON
   List<RoutePoint> _routePoints = [];
-  BoundingBox? _routeBoundingBox;
-  bool _isLocationWithinRouteBounds = false;
+  
   int _routeStartIndex = 0;
   bool isLoading = true;
+
+  // last location used to trigger estimation updates
+  LatLng? _lastEstimationLocation;
+  static const double _estimationTriggerMeters = 10.0;
 
   // arrival state for route waypoints
   final Map<int, DateTime> _arrivalTimes = {};
@@ -101,6 +113,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         }
         if (_routePoints.isNotEmpty && _isInferenceInitialized) {
           _attemptEstimation();
+          if (loc != null) {
+            _lastEstimationLocation = loc;
+          }
         }
       }
 
@@ -113,15 +128,28 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
         setState(() {
           currentLocation = loc;
           _routeStartIndex = newStartIndex;
-          _isLocationWithinRouteBounds =
-              _routeBoundingBox?.contains(loc) ?? false;
           _updateArrivalTimes(loc);
         });
 
-        if (startIndexChanged &&
-            _routePoints.isNotEmpty &&
-            _isInferenceInitialized) {
-          _attemptEstimation();
+        if (_routePoints.isNotEmpty && _isInferenceInitialized) {
+          final bool shouldEstimate;
+          if (startIndexChanged) {
+            shouldEstimate = true;
+          } else if (_lastEstimationLocation == null) {
+            shouldEstimate = true;
+          } else {
+            final dist = Distance().as(
+              LengthUnit.Meter,
+              _lastEstimationLocation!,
+              loc,
+            );
+            shouldEstimate = dist >= _estimationTriggerMeters;
+          }
+
+          if (shouldEstimate) {
+            _lastEstimationLocation = loc;
+            _attemptEstimation();
+          }
         }
       }, onError: (_) {});
     } catch (_) {
@@ -225,57 +253,47 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     if (!_isInferenceInitialized || _routePoints.isEmpty) return;
     if (_isEstimating) return;
 
-    if (currentLocation != null &&
-        _routeBoundingBox != null &&
-        !_routeBoundingBox!.contains(currentLocation!)) {
-      if (mounted) {
-        setState(() {
-          _segmentResults = [];
-        });
-      }
-      return;
-    }
     _isEstimating = true;
 
     try {
-      _routeStartIndex = _findNearestRouteStartIndex();
-
-      final startSegmentIndex = _routeStartIndex == 0
-          ? 0
-          : _routeStartIndex + 1;
-      final rawSegments = <Map<String, dynamic>>[];
-
-      for (int i = startSegmentIndex; i < _routePoints.length; i++) {
-        final point = _routePoints[i];
-        rawSegments.add({
-          'delta_dist_m': point.deltaDist,
-          'delta_elev_m': point.deltaElev,
-          'slope_deg': point.slopeDeg,
-        });
+      // Build plan using every adjacent route segment, then accumulate per post.
+      final plan = _buildAllSegmentPlan();
+      debugPrint('🧠 Full-route estimation plan: ${plan.endIndices.length} segments');
+      for (int i = 0; i < plan.endIndices.length; i++) {
+        final endIndex = plan.endIndices[i];
+        final startIndex = i == 0 ? 0 : plan.endIndices[i - 1];
+        final startName = _routePoints[startIndex].name ?? 'Pos $startIndex';
+        final endName = _routePoints[endIndex].name ?? 'Pos $endIndex';
+        debugPrint('   • Segment ${i + 1}: $startName ($startIndex) → $endName ($endIndex)');
+        debugPrint('     raw features: ${plan.segments[i]}');
       }
 
-      final remainingResults = rawSegments.isNotEmpty
+      final remainingResults = plan.segments.isNotEmpty
           ? _inferenceService.processSegments(
-              rawSegments,
+              plan.segments,
               widget.bodyWeight,
               widget.bagWeight,
             )
           : <SegmentResult>[];
 
-      final paddedResults = <SegmentResult>[];
-      if (_routeStartIndex > 0) {
-        paddedResults.addAll(
-          List<SegmentResult>.generate(
-            _routeStartIndex + 1,
-            (_) => SegmentResult(
-              label: 'Skipped',
-              predicted: 0.0,
-              cumulative: 0.0,
-            ),
-          ),
+      final paddedResults = List<SegmentResult>.generate(
+        _routePoints.length,
+        (_) => SegmentResult(
+          label: 'Skipped',
+          predicted: 0.0,
+          cumulative: 0.0,
+        ),
+      );
+
+      for (int i = 0; i < remainingResults.length; i++) {
+        final endIndex = plan.endIndices[i];
+        final result = remainingResults[i];
+        paddedResults[endIndex] = SegmentResult(
+          label: _routePoints[endIndex].name ?? 'Pos $endIndex',
+          predicted: result.predicted,
+          cumulative: result.cumulative,
         );
       }
-      paddedResults.addAll(remainingResults);
 
       if (mounted) {
         setState(() {
@@ -292,6 +310,54 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     } finally {
       _isEstimating = false;
     }
+  }
+
+  
+
+  Map<String, dynamic>? _aggregateSegmentFeatures(
+    int startIndex,
+    int endIndex,
+  ) {
+    if (startIndex >= endIndex) return null;
+
+    double totalDist = 0.0;
+    double totalElev = 0.0;
+    double weightedSlopeSum = 0.0;
+
+    for (int i = startIndex + 1; i <= endIndex; i++) {
+      final point = _routePoints[i];
+      totalDist += point.deltaDist;
+      totalElev += point.deltaElev;
+      weightedSlopeSum += point.slopeDeg * point.deltaDist;
+    }
+
+    if (totalDist <= 0.0) return null;
+
+    final averageSlope = weightedSlopeSum / totalDist;
+    return {
+      'delta_dist_m': totalDist,
+      'delta_elev_m': totalElev,
+      'slope_deg': averageSlope,
+    };
+  }
+
+  // Build a plan using every adjacent route segment from start to end.
+  _PostSegmentPlan _buildAllSegmentPlan() {
+    final totalPoints = _routePoints.length;
+    if (totalPoints <= 1) return _PostSegmentPlan(segments: [], endIndices: []);
+
+    final segments = <Map<String, dynamic>>[];
+    final endIndices = <int>[];
+
+    for (int i = 1; i < totalPoints; i++) {
+      final aggregated = _aggregateSegmentFeatures(i - 1, i);
+      if (aggregated != null) {
+        segments.add(aggregated);
+        endIndices.add(i);
+      }
+    }
+
+    return _PostSegmentPlan(segments: segments, endIndices: endIndices);
   }
 
   Future<void> _loadRoute() async {
@@ -340,17 +406,8 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     if (mounted) {
       setState(() {
         _routePoints = pts;
-        if (_routePoints.isNotEmpty) {
-          final routePointsLatLng = _routePoints
-              .map((p) => LatLng(p.lat, p.lon))
-              .toList();
-          _routeBoundingBox = BoundingBoxCalculator.calculateBoundingBox(
-            routePointsLatLng,
-          );
-        }
+          // route points loaded
         if (currentLocation != null) {
-          _isLocationWithinRouteBounds =
-              _routeBoundingBox?.contains(currentLocation!) ?? false;
           _updateArrivalTimes(currentLocation!);
         }
       });
@@ -415,6 +472,21 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
     }
 
     return nearestIndex;
+  }
+
+  String _formatDurationString(int totalMinutes) {
+    if (totalMinutes <= 0) {
+      return '0 menit';
+    }
+    final duration = Duration(minutes: totalMinutes);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    if (hours > 0) {
+      return minutes > 0
+          ? '$hours jam $minutes menit'
+          : '$hours jam';
+    }
+    return '$minutes menit';
   }
 
   void _showContactPersonDialog() {
@@ -885,8 +957,7 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
 
                                         final showRouteEstimate =
                                             currentLocation != null &&
-                                            _routeBoundingBox != null &&
-                                            _isLocationWithinRouteBounds;
+                                            _routePoints.isNotEmpty;
 
                                         if (!showRouteEstimate) {
                                           return ListView(
@@ -907,7 +978,9 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                     16,
                                                   ),
                                                   child: Text(
-                                                    'Sorry, the location is not around the route.',
+                                                    currentLocation == null
+                                                        ? 'Lokasi tidak tersedia. Pastikan izin lokasi diberikan.'
+                                                        : 'Estimasi tidak tersedia. Memuat data jalur...',
                                                     style: const TextStyle(
                                                       fontSize: 16,
                                                       fontWeight:
@@ -951,11 +1024,12 @@ class _HikingMapScreenState extends State<HikingMapScreen> {
                                                 _arrivalTimes[originalIdx];
                                             final trailingText =
                                                 hasArrival &&
-                                                    arrivalTime != null
-                                                ? originalIdx == 0
-                                                      ? "Berangkat pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
-                                                      : "Tiba pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
-                                                : 'Estimasi waktu: $estimatedTime menit';
+                                                        arrivalTime != null
+                                                    ? originalIdx == 0
+                                                        ? "Berangkat pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                        : "Tiba pukul: ${arrivalTime.hour.toString().padLeft(2, '0')}:${arrivalTime.minute.toString().padLeft(2, '0')} WIB"
+                                                    :
+                                                        'Estimasi waktu: ${_formatDurationString(estimatedTime)}';
 
                                             return Card(
                                               shape: RoundedRectangleBorder(
