@@ -2,7 +2,7 @@
     "mountain_name": "Gunung Lawu",
     "elevation": 3265,
     "province": "Jawa Tengah",
-    "description": "Data Jalur Uji Coba",
+    "description": "Terletak di perbatasan Jawa Tengah dan Jawa Timur menjadi destinasi favorit karena memadukan alam indah, sejarah, dan nuansa spiritual.",
     "routes": [
       {
         "file": "route_glonggong_mlaten.json",
