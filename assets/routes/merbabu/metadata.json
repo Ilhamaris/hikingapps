@@ -1,0 +1,13 @@
+{
+    "mountain_name": "Gunung Merbabu",
+    "elevation": 3145,
+    "province": "Jawa Tengah",
+    "description": "Terkenal dengan pesona Padang Sabana luas yang yang berada di Jawa Tengah, melintasi Magelang, Boyolali, dan Semarang.",
+    "routes": [
+      {
+        "file": "merbabu_via_suwanting.json",
+        "name": "Merbabu via Suwanting",
+        "contact_person": "098712345432"
+      }
+    ]
+  }

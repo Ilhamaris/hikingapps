@@ -17,7 +17,7 @@ class MountainLoader {
     final mountains = <Mountain>[];
 
     // Daftar folder gunung yang tersedia (misal glonggong, mongkrang).
-    final mountainFolders = ['glonggong', 'mongkrang', 'lawu', 'arjuno']; // Tambahkan nama folder gunung lainnya di sini.
+    final mountainFolders = ['glonggong', 'mongkrang', 'lawu', 'arjuno', 'merbabu', 'sindoro']; // Tambahkan nama folder gunung lainnya di sini.
 
     for (final folder in mountainFolders) {
       try {

@@ -53,6 +53,12 @@ flutter:
     - assets/routes/arjuno/metadata.json
     - assets/routes/arjuno/rute/arjuno_via_purwosari.json
 
+    - assets/routes/merbabu/metadata.json
+    - assets/routes/merbabu/rute/merbabu_via_suwanting.json
+
+    - assets/routes/sindoro/metadata.json
+    - assets/routes/sindoro/rute/sindoro_via_kledung.json
+    
     - assets/models/
     - assets/models/linear_regression.tflite
 

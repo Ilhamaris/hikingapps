@@ -2,7 +2,7 @@
   "mountain_name": "Gunung Mongkrang",
   "elevation": 2194,
   "province": "Jawa Tengah",
-  "description": "Gunung populer di selatan Gunung Lawu yang terkenal dengan sabana ilalang, pemandangan Gunung Lawu, dan jalur pendakian ramah untuk pemula",
+  "description": "Terletak disebelah Gunung Lawu yang terkenal dengan sabana ilalang, pemandangan Gunung Lawu, dan jalur pendakian ramah untuk pemula.",
   "routes": [
     {
       "file": "Mongkrang_Peak.json",

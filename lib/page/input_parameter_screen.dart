@@ -173,13 +173,43 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    final bodyWeight = _bodyWeightController.text;
-                    final bagWeight = _bagWeightController.text;
+                    final bodyWeightText = _bodyWeightController.text.trim();
+                    final bagWeightText = _bagWeightController.text.trim();
 
-                    if (bodyWeight.isEmpty || bagWeight.isEmpty) {
+                    if (bodyWeightText.isEmpty || bagWeightText.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Silakan isi semua parameter'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final bodyWeight = double.tryParse(bodyWeightText);
+                    final bagWeight = double.tryParse(bagWeightText);
+
+                    if (bodyWeight == null || bagWeight == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Masukkan angka yang valid untuk berat badan dan berat tas'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (bodyWeight < 56 || bodyWeight > 68) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Berat badan harus di antara 56 kg dan 68 kg'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (bagWeight < 0 || bagWeight > 15) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Berat tas harus di antara 0 kg dan 15 kg'),
                         ),
                       );
                       return;
@@ -191,8 +221,8 @@ class _InputParameterScreenState extends State<InputParameterScreen> {
                       arguments: {
                         'mountain': mountain,
                         'route': route,
-                        'bodyWeight': double.parse(bodyWeight),
-                        'bagWeight': double.parse(bagWeight),
+                        'bodyWeight': bodyWeight,
+                        'bagWeight': bagWeight,
                       },
                     );
                   },

@@ -1,0 +1,13 @@
+{
+    "mountain_name": "Gunung Sindoro",
+    "elevation": 3153,
+    "province": "Jawa Tengah",
+    "description": "Gunung kembar Gunung Sumbing ini menyuguhkan panorama lautan awan yang menakjubkan serta pemandangan matahari terbit (golden sunrise).",
+    "routes": [
+      {
+        "file": "sindoro_via_kledung.json",
+        "name": "Sindoro via Kledung",
+        "contact_person": "098712345432"
+      }
+    ]
+  }
