@@ -5,11 +5,6 @@
     "description": "Terletak di perbatasan Jawa Tengah dan Jawa Timur menjadi destinasi favorit karena memadukan alam indah, sejarah, dan nuansa spiritual.",
     "routes": [
       {
-        "file": "route_glonggong_mlaten.json",
-        "name": "Glonggong - Mlaten",
-        "contact_person": "098712345432"
-      },
-      {
         "file": "lawu_via_cetho.json",
         "name": "Lawu via Cetho",
         "contact_person": "000000000000"
